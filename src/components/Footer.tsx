@@ -1,161 +1,142 @@
+// src/components/Footer.tsx
 import React from 'react';
-import { Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
-import { useI18n } from '../i18n/I18nProvider';
+import { MapPin, Phone, Mail, Clock, Instagram, Facebook, MessageCircle } from 'lucide-react';
 
-const Footer: React.FC = () => {
-  const { t } = useI18n();
-
-  const socialLinks = [
-    { id: 'facebook',  icon: Facebook,  href: 'https://facebook.com/motocentral',  labelKey: 'social.facebook' },
-    { id: 'instagram', icon: Instagram, href: 'https://instagram.com/motocentral', labelKey: 'social.instagram' },
-    { id: 'twitter',   icon: Twitter,   href: 'https://twitter.com/motocentral',   labelKey: 'social.twitter' },
-    { id: 'youtube',   icon: Youtube,   href: 'https://youtube.com/motocentral',   labelKey: 'social.youtube' },
-  ] as const;
-
-  const quickLinks = [
-    { id: 'home',     textKey: 'nav.home',    href: '#inicio' },
-    { id: 'catalog',  textKey: 'nav.catalog', href: '#catalogo' },
-    { id: 'about',    textKey: 'nav.about',   href: '#nosotros' },
-    { id: 'contact',  textKey: 'nav.contact', href: '#contacto' },
-  ] as const;
-
-  const services = [
-    { id: 'new',       textKey: 'services.new',       href: '#catalogo' },
-    { id: 'used',      textKey: 'services.used',      href: '#catalogo' },
-    { id: 'finance',   textKey: 'services.finance',   href: '#contacto' },
-    { id: 'tech',      textKey: 'services.tech',      href: '#contacto' },
-  ] as const;
-
-  const handleSocialClick = (href: string) => {
-    window.open(href, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleLinkClick = (href: string) => {
-    if (href.startsWith('#')) {
-      const element = document.getElementById(href.substring(1));
-      if (element) element.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      window.open(href, '_blank', 'noopener,noreferrer');
-    }
-  };
-
-  const handleTermsClick = () => {
-    alert(t('footer.legal.termsMsg'));
-  };
-  const handlePrivacyClick = () => {
-    alert(t('footer.legal.privacyMsg'));
-  };
-  const handleCookiesClick = () => {
-    alert(t('footer.legal.cookiesMsg'));
-  };
-
+export default function Footer() {
   return (
-    <footer className="bg-black border-top border-t border-red-600">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid md:grid-cols-4 gap-8">
-          {/* Logo and Description */}
-          <div className="md:col-span-2">
-            <button
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="flex items-center space-x-2 mb-4 hover:scale-105 transition-transform duration-300"
-              aria-label="Go to top"
-              title="Top"
-            >
-              <div className="bg-red-600 p-2 rounded-lg">
-                <img
-                  src="/IMG/One_Way_Motors_Logo-1.png"
-                  alt="Logo de One Way Motors"
-                  className="w-10 h-10 object-contain rounded-lg"
-                />
-              </div>
-              <div>
-                <h3 className="text-2xl font-black text-white tracking-wide">ONE WAY MOTORS</h3>
-                <p className="text-lg text-red-400 font-bold">{t('footer.tagline')}</p>
-              </div>
-            </button>
+    <footer className="mt-24 bg-black text-white pt-12 pb-8 border-t border-purple-500/40">
+      <div className="max-w-6xl mx-auto px-4">
+        {/* Header / marca */}
+        <div className="text-center mb-10">
+          <div className="mx-auto mb-4 h-1 w-24 bg-gradient-to-r from-fuchsia-500 via-purple-500 to-indigo-500 rounded-full" />
 
-            <p className="text-white text-lg font-bold mb-6 max-w-md">
-              {t('footer.desc')}
-            </p>
+          <h2 className="text-2xl font-black tracking-wide text-purple-100">
+            EBABS ELECTRONIC LLC
+          </h2>
+          <p className="mt-2 text-sm text-gray-400">
+            Electric Mobility & Electronics for Everyday Life
+          </p>
+        </div>
 
-            <div className="flex space-x-4">
-              {socialLinks.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => handleSocialClick(s.href)}
-                  className="bg-red-600/90 backdrop-blur-md border border-red-600/50 p-3 rounded-lg hover:bg-red-700 transition-all duration-300 transform hover:scale-110 shadow-lg"
-                  aria-label={t(s.labelKey)}
-                  title={t(s.labelKey)}
+        {/* 3 columnas */}
+        <div className="grid gap-8 md:grid-cols-3 text-sm">
+          {/* Columna 1: contacto */}
+          <div>
+            <h3 className="text-sm font-semibold tracking-wide text-purple-200 uppercase mb-4">
+              Contact
+            </h3>
+            <ul className="space-y-2 text-gray-300">
+              <li className="flex items-start gap-2">
+                <MapPin className="w-4 h-4 mt-[2px] text-purple-400" />
+                <span>811 NE 79th St – Miami, FL</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Phone className="w-4 h-4 text-purple-400" />
+                <a href="tel:+13050000000" className="hover:text-purple-200">
+                  +1 (305) 000-0000
+                </a>
+              </li>
+              <li className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-purple-400" />
+                <a
+                  href="mailto:info@ebabselectronic.com"
+                  className="hover:text-purple-200"
                 >
-                  <s.icon className="w-5 h-5 text-white" />
-                </button>
-              ))}
+                  info@ebabselectronic.com
+                </a>
+              </li>
+              <li className="flex items-start gap-2">
+                <Clock className="w-4 h-4 mt-[2px] text-purple-400" />
+                <span>
+                  Mon – Sat: 10:00 AM – 7:30 PM
+                  <br />
+                  Sun: 10:00 AM – 6:00 PM
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Columna 2: navegación rápida */}
+          <div>
+            <h3 className="text-sm font-semibold tracking-wide text-purple-200 uppercase mb-4">
+              Quick Links
+            </h3>
+            <ul className="space-y-2 text-gray-300">
+              <li>
+                <a href="#inicio" className="hover:text-purple-200">
+                  Home
+                </a>
+              </li>
+              <li>
+                <a href="#catalogo" className="hover:text-purple-200">
+                  Catalog
+                </a>
+              </li>
+              <li>
+                <a href="#nosotros" className="hover:text-purple-200">
+                  About Us
+                </a>
+              </li>
+              <li>
+                <a href="#contacto" className="hover:text-purple-200">
+                  Contact
+                </a>
+              </li>
+              <li>
+                <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+                  Financing available with Affirm.
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Columna 3: servicios / redes */}
+          <div>
+            <h3 className="text-sm font-semibold tracking-wide text-purple-200 uppercase mb-4">
+              Services & Social
+            </h3>
+            <ul className="space-y-2 text-gray-300 mb-4">
+              <li>• New & used electric scooters</li>
+              <li>• E-bikes & cargo trikes</li>
+              <li>• Technical service & repairs</li>
+              <li>• Electronics & accessories</li>
+            </ul>
+
+            <div className="flex items-center gap-3 mt-2">
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-purple-700 hover:bg-purple-500 transition-colors"
+                aria-label="Instagram"
+              >
+                <Instagram className="w-4 h-4" />
+              </a>
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-purple-700 hover:bg-purple-500 transition-colors"
+                aria-label="Facebook"
+              >
+                <Facebook className="w-4 h-4" />
+              </a>
+              <a
+                href="#contacto"
+                className="inline-flex h-9 items-center gap-2 rounded-full bg-emerald-500 px-4 text-xs font-semibold hover:bg-emerald-400 transition-colors"
+              >
+                <MessageCircle className="w-4 h-4" />
+                WhatsApp
+              </a>
             </div>
-          </div>
-
-          {/* Quick Links */}
-          <div>
-            <h4 className="text-xl font-black text-white mb-4">{t('footer.quickLinks.title')}</h4>
-            <ul className="space-y-2">
-              {quickLinks.map((link) => (
-                <li key={link.id}>
-                  <button
-                    onClick={() => handleLinkClick(link.href)}
-                    className="text-white text-lg font-bold hover:text-red-400 transition-colors"
-                  >
-                    {t(link.textKey)}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Services */}
-          <div>
-            <h4 className="text-xl font-black text-white mb-4">{t('footer.services.title')}</h4>
-            <ul className="space-y-2">
-              {services.map((s) => (
-                <li key={s.id}>
-                  <button
-                    onClick={() => handleLinkClick(s.href)}
-                    className="text-white text-lg font-bold hover:text-red-400 transition-colors"
-                  >
-                    {t(s.textKey)}
-                  </button>
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
 
-        <div className="border-t border-red-600 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-white text-lg font-bold">
-            © {new Date().getFullYear()} ONE WAY MOTORS. {t('footer.rights')}
-          </p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <button
-              onClick={handleTermsClick}
-              className="text-white hover:text-red-400 text-lg font-bold transition-colors"
-            >
-              {t('footer.legal.terms')}
-            </button>
-            <button
-              onClick={handlePrivacyClick}
-              className="text-white hover:text-red-400 text-lg font-bold transition-colors"
-            >
-              {t('footer.legal.privacy')}
-            </button>
-            <button
-              onClick={handleCookiesClick}
-              className="text-white hover:text-red-400 text-lg font-bold transition-colors"
-            >
-              {t('footer.legal.cookies')}
-            </button>
-          </div>
+        {/* línea final */}
+        <div className="mt-10 border-t border-white/10 pt-4 text-center text-xs text-gray-500">
+          © {new Date().getFullYear()} EBABS ELECTRONIC. All rights reserved.
         </div>
       </div>
     </footer>
   );
-};
-
-export default Footer;
+}

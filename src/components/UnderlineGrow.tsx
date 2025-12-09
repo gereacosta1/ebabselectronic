@@ -1,20 +1,24 @@
 // src/components/UnderlineGrow.tsx
-import React from "react";
+import React from 'react';
 
-type Props = { children: React.ReactNode };
+type Props = {
+  children: React.ReactNode;
+};
 
-export default function UnderlineGrow({ children }: Props) {
+const UnderlineGrow: React.FC<Props> = ({ children }) => {
   return (
     <span
       className="
         relative inline-block
         after:content-[''] after:absolute after:left-0 after:-bottom-1
-        after:h-[6px] after:w-0 after:bg-[rgb(199,48,48)]
-        after:transition-[width] after:duration-300 after:ease-in
+        after:h-[3px] after:w-0 after:bg-purple-500
+        after:transition-all after:duration-300 after:ease-in-out
         hover:after:w-full
       "
     >
       {children}
     </span>
   );
-}
+};
+
+export default UnderlineGrow;

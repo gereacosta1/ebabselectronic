@@ -8,7 +8,6 @@ import Footer from './components/Footer';
 import MotorcycleModal from './components/MotorcycleModal';
 import { I18nProvider } from './i18n/I18nProvider';
 
-// 🛒 carrito
 import { CartProvider, useCart } from './context/CartContext';
 import CartDrawer from './components/CartDrawer';
 import { ShoppingCart } from 'lucide-react';
@@ -27,10 +26,9 @@ export interface Motorcycle {
   featured?: boolean;
   description?: string;
   features?: string[];
-   gallery?: string[];
+  gallery?: string[];
 }
 
-// Botón flotante para abrir el carrito (usa open() y cuenta total de qty)
 function CartFab() {
   const { open, items } = useCart();
   const count = items.reduce((sum, it) => sum + it.qty, 0);
@@ -40,8 +38,7 @@ function CartFab() {
   return (
     <button
       onClick={open}
-      className="fixed right-4 bottom-4 z-[9999] bg-red-600 text-white rounded-full shadow-2xl px-5 py-3 flex items-center gap-2 hover:bg-red-700"
-      aria-label="Abrir carrito"
+      className="fixed right-4 bottom-4 z-[9999] bg-[var(--primary)] text-white rounded-full shadow-2xl px-5 py-3 flex items-center gap-2 hover:bg-purple-700"
     >
       <ShoppingCart className="w-5 h-5" />
       <span className="font-black">{count}</span>
@@ -55,24 +52,23 @@ function AppInner() {
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
-    const element = document.getElementById(sectionId);
-    if (element) element.scrollIntoView({ behavior: 'smooth' });
+    const el = document.getElementById(sectionId);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handlePhoneCall = () => window.open('tel:+1 (786) 253-0995', '_self');
+  const handlePhoneCall = () => window.open('tel:+17869681621', '_self');
 
   const handleWhatsApp = () => {
-    const message = encodeURIComponent("Hi! I'm interested in your electric vehicles. Could you help me?");
-    const whatsappUrl = `https://wa.me/+17862530995?text=${message}`;
-    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    const message = encodeURIComponent("Hi! I'm interested in your electric vehicles.");
+    window.open(`https://wa.me/+17869681621?text=${message}`, '_blank');
   };
 
   const handleEmail = () => {
-    window.open('mailto:onewaymotors2@gmail.com?subject=Consulta sobre motocicletas', '_self');
+    window.open('mailto:ebabselectronic@gmail.com', '_self');
   };
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-[var(--light)]">
       <Header activeSection={activeSection} onNavigate={scrollToSection} />
       <Hero onNavigate={scrollToSection} />
 
@@ -90,7 +86,6 @@ function AppInner() {
         />
       )}
 
-      {/* Botón flotante + Drawer del carrito */}
       <CartFab />
       <CartDrawer />
     </div>
@@ -99,9 +94,9 @@ function AppInner() {
 
 export default function App() {
   return (
-     <I18nProvider> 
+    <I18nProvider>
       <CartProvider>
-         <AppInner />
+        <AppInner />
       </CartProvider>
     </I18nProvider>
   );

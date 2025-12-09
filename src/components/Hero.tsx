@@ -1,71 +1,76 @@
+// src/components/Hero.tsx
 import React from 'react';
-import { ArrowRight, Star, Shield, Wrench } from 'lucide-react';
-import { useI18n } from '../i18n/I18nProvider';
+import { ArrowRight } from 'lucide-react';
 
 interface HeroProps {
   onNavigate: (section: string) => void;
 }
 
 const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
-  const { t } = useI18n();
-
   return (
-    <section id="inicio" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-r from-black/90 to-black/60 z-10"></div>
-        <img
-          src="https://images.pexels.com/photos/2116475/pexels-photo-2116475.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080"
-          alt="Electric Vehicles"
-          className="w-full h-full object-cover"
-        />
-      </div>
+    <section
+      id="inicio"
+      className="pt-32 bg-gradient-to-r from-purple-700 via-purple-600 to-indigo-700"
+    >
+      <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
+        {/* Texto */}
+        <div className="text-white">
+          <p className="uppercase tracking-[0.2em] text-sm md:text-base mb-3 text-yellow-300">
+            EBABS ELECTRONIC LLC
+          </p>
 
-      {/* Content */}
-      <div className="relative z-20 container mx-auto px-4 text-center">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white mb-8 tracking-tight">
-            {t('hero.title.pre')}{' '}
-            <span className="text-red-500">{t('hero.title.highlight')}</span>
-            <br />
-            {t('hero.title.post')}
+          <h1 className="font-black text-4xl md:text-5xl lg:text-6xl leading-tight mb-4">
+            Electric Mobility & Electronics
+            <span className="block text-yellow-300">For Everyday Life ⚡</span>
           </h1>
 
-          <p className="text-2xl md:text-3xl lg:text-4xl text-white mb-12 max-w-3xl mx-auto font-bold">
-            {t('hero.subtitle')}
+          <p className="text-base md:text-lg lg:text-xl text-purple-100 mb-6 max-w-xl">
+            Scooters, e-bikes, cargo trikes and electronics. Financing, service
+            and support from your local shop in Miami.
           </p>
-          
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
-            <button 
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
               onClick={() => onNavigate('catalogo')}
-              className="bg-red-600/90 backdrop-blur-md border border-red-600/50 text-white px-12 py-4 rounded-lg text-xl font-black hover:bg-red-700 transition-all duration-300 flex items-center justify-center space-x-3 group transform hover:scale-105 shadow-2xl"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full
+                         font-extrabold bg-yellow-300 text-purple-900
+                         hover:bg-yellow-400 transition-transform duration-300 hover:scale-105"
             >
-              <span>{t('hero.cta.explore')}</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              View Catalog
+              <ArrowRight className="w-5 h-5" />
             </button>
 
-            <button 
+            <button
               onClick={() => onNavigate('contacto')}
-              className="border-2 border-red-600/80 bg-black/30 backdrop-blur-md text-red-500 px-12 py-4 rounded-lg text-xl font-black hover:bg-red-600 hover:text-white transition-all duration-300 transform hover:scale-105 shadow-2xl"
+              className="inline-flex items-center justify-center px-8 py-3 rounded-full
+                         font-bold border border-purple-200/70 text-purple-50
+                         hover:bg-purple-800/60 transition-transform duration-300 hover:scale-105"
             >
-              {t('hero.cta.finance')}
+              Visit Our Store
             </button>
           </div>
+        </div>
 
-          {/* Features */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="flex items-center justify-center space-x-3 text-white">
-              <Star className="w-8 h-8 text-red-500" />
-              <span className="text-xl md:text-2xl font-bold">{t('hero.feature.quality')}</span>
+        {/* Imagen */}
+        <div className="relative flex items-center justify-center">
+          <div
+            className="rounded-3xl overflow-hidden shadow-2xl bg-gray-900/40 border border-purple-200/20
+                       flex items-center justify-center px-4 py-4 md:px-6 md:py-6"
+          >
+            <img
+              src="/IMG/scooter-ebabs.webp"
+              alt="EBABS Electric Scooter in the showroom"
+              className="w-full max-h-[420px] object-contain drop-shadow-2xl"
+            />
+          </div>
+
+          <div className="absolute -bottom-6 -left-4 bg-white rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3">
+            <div className="h-8 w-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-lg">
+              ⚡
             </div>
-            <div className="flex items-center justify-center space-x-3 text-white">
-              <Shield className="w-8 h-8 text-red-500" />
-              <span className="text-xl md:text-2xl font-bold">{t('hero.feature.warranty')}</span>
-            </div>
-            <div className="flex items-center justify-center space-x-3 text-white">
-              <Wrench className="w-8 h-8 text-red-500" />
-              <span className="text-xl md:text-2xl font-bold">{t('hero.feature.service')}</span>
+            <div className="text-sm">
+              <p className="font-bold text-gray-800">811 NE 79th St, Miami</p>
+              <p className="text-gray-500 text-xs">Open 10:30 AM – 7:00 PM</p>
             </div>
           </div>
         </div>
