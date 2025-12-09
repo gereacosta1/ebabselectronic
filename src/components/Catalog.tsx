@@ -48,10 +48,10 @@ const Btn: React.FC<BtnProps> = ({
   const base =
     "w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-extrabold " +
     "transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 " +
-    "focus:ring-red-500 disabled:opacity-60 disabled:cursor-not-allowed";
+    "focus:ring-black-500 disabled:opacity-60 disabled:cursor-not-allowed";
   const variants = {
     primary:
-      "bg-red-600 text-white hover:bg-red-700 shadow-lg hover:shadow-red-500/40 active:scale-[.98]",
+      "bg-purple-600 text-white hover:bg-white-700 shadow-lg hover:shadow-black-500/40 active:scale-[.98]",
     secondary:
       "bg-black text-white border border-white/15 hover:bg-black/90 shadow-lg active:scale-[.98]",
     ghost:
