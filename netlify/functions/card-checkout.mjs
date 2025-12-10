@@ -1,4 +1,3 @@
-// netlify/functions/card-checkout.mjs
 import Stripe from 'stripe';
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY || '';
@@ -55,10 +54,14 @@ export async function handler(event) {
 
     const body = JSON.parse(event.body || '{}');
     const items = Array.isArray(body.items) ? body.items : [];
+
+    const fallbackOrigin = 'https://ebabselectronic.netlify.app';
     const origin =
       typeof body.origin === 'string' && body.origin.startsWith('http')
         ? body.origin
-        : 'https://onewaymotor.com';
+        : fallbackOrigin;
+
+    console.log('[card-checkout] origin:', origin);
 
     if (!items.length) {
       return json(400, { error: 'items array required' });
@@ -81,13 +84,8 @@ export async function handler(event) {
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      // 👇 Card + BNPL (Afterpay, Klarna, Zip)
-      payment_method_types: [
-        'card',
-        'afterpay_clearpay',
-        'klarna',
-        'zip',
-      ],
+      // Card + BNPL (Afterpay, Klarna, Zip)
+      payment_method_types: ['card', 'afterpay_clearpay', 'klarna', 'zip'],
       line_items,
       success_url: `${origin}/?card=success`,
       cancel_url: `${origin}/?card=cancel`,

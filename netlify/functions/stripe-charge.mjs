@@ -1,4 +1,3 @@
-// netlify/functions/stripe-charge.mjs
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -12,7 +11,8 @@ export async function handler(event) {
   }
 
   try {
-    const { amount_cents, currency, name, description, token } = JSON.parse(event.body || "{}");
+    const { amount_cents, currency, name, description, token } =
+      JSON.parse(event.body || "{}");
 
     if (!amount_cents || !token) {
       return {

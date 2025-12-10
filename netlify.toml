@@ -1,4 +1,4 @@
-[build]
+[build] 
   command = "npm run build"
   publish = "dist"
   functions = "netlify/functions"
@@ -10,19 +10,26 @@
   to = "/affirm/:splat"
   status = 200
 
-# Proxy del API a la función serverless
+# ---------- API Affirm ----------
+# (queda listo, pero si no tenés VITE_AFFIRM_PUBLIC_KEY no se usará)
 [[redirects]]
   from = "/api/affirm-authorize"
   to = "/.netlify/functions/affirm-authorize"
   status = 200
 
-  # ✅ NUEVO: proxy para pago con tarjeta (Stripe Checkout)
+# ---------- API Stripe: Checkout con tarjeta / BNPL ----------
 [[redirects]]
   from = "/api/card-checkout"
   to = "/.netlify/functions/card-checkout"
   status = 200
 
-# Catch-all del SPA (mantener al final)
+# (opcional, por si en algún momento usas stripe-charge directo)
+[[redirects]]
+  from = "/api/stripe-charge"
+  to = "/.netlify/functions/stripe-charge"
+  status = 200
+
+# ---------- SPA catch-all (mantener al final) ----------
 [[redirects]]
   from = "/*"
   to = "/index.html"
@@ -38,7 +45,7 @@
     X-Frame-Options = "SAMEORIGIN"
 
 # ---------- Entornos ----------
-# Producción → Affirm prod
+# Producción → Affirm prod (cuando haya claves)
 [context.production.environment]
   AFFIRM_ENV = "prod"
   VITE_AFFIRM_ENV = "prod"

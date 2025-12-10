@@ -1,7 +1,11 @@
 // src/components/AffirmButton.tsx
-import { useEffect, useState, type ReactNode } from 'react';
-import { loadAffirm } from '../lib/affirm';
-import { buildAffirmCheckout, type CartItem as Item, type Customer } from '../lib/affirmCheckout';
+import { useEffect, useState, type ReactNode } from "react";
+import { loadAffirm, AFFIRM_ENABLED } from "../lib/affirm";
+import {
+  buildAffirmCheckout,
+  type CartItem as Item,
+  type Customer,
+} from "../lib/affirmCheckout";
 
 type Props = {
   cartItems?: {
@@ -27,10 +31,10 @@ function Toast({
   show,
   type,
   message,
-  onClose
+  onClose,
 }: {
   show: boolean;
-  type: 'success' | 'error' | 'info';
+  type: "success" | "error" | "info";
   message: string;
   onClose: () => void;
 }) {
@@ -42,11 +46,11 @@ function Toast({
       onClick={onClose}
       className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] px-4 py-3 rounded-xl shadow-2xl border text-sm font-semibold 
       ${
-        type === 'success'
-          ? 'bg-green-600/95 text-white border-green-400'
-          : type === 'error'
-          ? 'bg-red-600/95 text-white border-red-400'
-          : 'bg-black/90 text-white border-white/20'
+        type === "success"
+          ? "bg-green-600/95 text-white border-green-400"
+          : type === "error"
+          ? "bg-red-600/95 text-white border-red-400"
+          : "bg-black/90 text-white border-white/20"
       }`}
     >
       {message}
@@ -61,7 +65,7 @@ function NiceModal({
   primaryLabel,
   onPrimary,
   secondaryLabel,
-  onClose
+  onClose,
 }: {
   open: boolean;
   title: string;
@@ -75,11 +79,17 @@ function NiceModal({
 
   return (
     <div className="fixed inset-0 z-[9998] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
       <div className="relative bg-white rounded-2xl shadow-2xl w-[95%] max-w-md p-6">
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-xl font-black text-gray-900">{title}</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-800"
+          >
             ✕
           </button>
         </div>
@@ -114,31 +124,42 @@ export default function AffirmButton({
   totalUSD,
   shippingUSD = 0,
   taxUSD = 0,
-  customer
+  customer,
 }: Props) {
-  const PUBLIC_KEY = (import.meta.env.VITE_AFFIRM_PUBLIC_KEY || '').trim();
-  const ENV = (import.meta.env.VITE_AFFIRM_ENV || 'prod') as 'prod' | 'sandbox';
+  const PUBLIC_KEY = (import.meta.env.VITE_AFFIRM_PUBLIC_KEY || "").trim();
+  const ENV = (import.meta.env.VITE_AFFIRM_ENV || "prod") as "prod" | "sandbox";
+
+  if (!PUBLIC_KEY) {
+    return null;
+  }
 
   const [ready, setReady] = useState(false);
   const [opening, setOpening] = useState(false);
   const [toast, setToast] = useState({
     show: false,
-    type: 'info' as 'success' | 'error' | 'info',
-    message: ''
+    type: "info" as "success" | "error" | "info",
+    message: "",
   });
   const [modal, setModal] = useState({
     open: false,
-    title: '',
-    body: '',
-    retry: false
+    title: "",
+    body: "",
+    retry: false,
   });
 
-  const showToast = (type: 'success' | 'error' | 'info', message: string, ms = 2200) => {
+  const affirmEnabled = AFFIRM_ENABLED;
+
+  const showToast = (
+    type: "success" | "error" | "info",
+    message: string,
+    ms = 2200
+  ) => {
     setToast({ show: true, type, message });
     setTimeout(() => setToast((s) => ({ ...s, show: false })), ms);
   };
 
   useEffect(() => {
+    // Si no hay clave, loadAffirm solo loguea y resuelve sin romper nada
     loadAffirm(PUBLIC_KEY, ENV)
       .then(() => setReady(true))
       .catch(() => setReady(false));
@@ -149,36 +170,43 @@ export default function AffirmButton({
     title: it.name,
     price: it.price,
     qty: Math.max(1, Number(it.qty) || 1),
-    url: it.url ?? '/',
-    image: it.image
+    url: it.url ?? "/",
+    image: it.image,
   }));
 
-  const subtotalC = mapped.reduce((acc, it) => acc + toCents(it.price) * it.qty, 0);
+  const subtotalC = mapped.reduce(
+    (acc, it) => acc + toCents(it.price) * it.qty,
+    0
+  );
   const shippingC = toCents(shippingUSD);
   const taxC = toCents(taxUSD);
-  const totalC = typeof totalUSD === 'number' ? toCents(totalUSD) : subtotalC + shippingC + taxC;
+  const totalC =
+    typeof totalUSD === "number"
+      ? toCents(totalUSD)
+      : subtotalC + shippingC + taxC;
 
-  const canPay = ready && mapped.length > 0 && totalC >= MIN_TOTAL_CENTS;
+  // Solo permitimos pagar si Affirm está habilitado + SDK listo + monto mínimo
+  const canPay = affirmEnabled && ready && mapped.length > 0 && totalC >= MIN_TOTAL_CENTS;
 
   async function handleClick() {
     const affirm = (window as any).affirm;
 
     if (!affirm?.checkout) {
-      showToast('error', 'Affirm is not ready');
+      showToast("error", "Affirm is not ready");
       return;
     }
 
     if (!canPay) {
       setModal({
         open: true,
-        title: 'Amount unavailable',
-        body: 'The total amount is too low for Affirm.',
-        retry: false
+        title: "Amount unavailable",
+        body: "The total amount is too low for Affirm.",
+        retry: false,
       });
       return;
     }
 
-    const base = window.location.origin.replace('http://', 'https://');
+    const base = window.location.origin.replace("http://", "https://");
 
     const checkout = buildAffirmCheckout(
       mapped,
@@ -195,25 +223,25 @@ export default function AffirmButton({
       affirm.checkout.open({
         onSuccess: async ({ checkout_token }: { checkout_token: string }) => {
           try {
-            const r = await fetch('/.netlify/functions/affirm-authorize', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+            const r = await fetch("/.netlify/functions/affirm-authorize", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 checkout_token,
-                order_id: 'ORDER-' + Date.now(),
+                order_id: "ORDER-" + Date.now(),
                 amount_cents: checkout.total,
-                capture: true
-              })
+                capture: true,
+              }),
             });
 
-            console.log('affirm-authorize →', await r.json());
-            showToast('success', 'Request submitted!');
+            console.log("affirm-authorize →", await r.json());
+            showToast("success", "Request submitted!");
           } catch (e) {
             setModal({
               open: true,
-              title: 'We could not confirm your request',
-              body: 'There was a problem confirming with the server.',
-              retry: true
+              title: "We could not confirm your request",
+              body: "There was a problem confirming with the server.",
+              retry: true,
             });
           } finally {
             setOpening(false);
@@ -224,9 +252,9 @@ export default function AffirmButton({
           setOpening(false);
           setModal({
             open: true,
-            title: 'Financing was not completed',
-            body: 'You can try again.',
-            retry: true
+            title: "Financing was not completed",
+            body: "You can try again.",
+            retry: true,
           });
         },
 
@@ -234,9 +262,9 @@ export default function AffirmButton({
           setOpening(false);
           setModal({
             open: true,
-            title: 'Invalid information',
-            body: 'Please check the buyer’s name and address.',
-            retry: false
+            title: "Invalid information",
+            body: "Please check the buyer’s name and address.",
+            retry: false,
           });
         },
 
@@ -244,17 +272,22 @@ export default function AffirmButton({
           setOpening(false);
           setModal({
             open: true,
-            title: 'Process canceled',
-            body: 'No charges were made. Would you like to try again?',
-            retry: true
+            title: "Process canceled",
+            body: "No charges were made. Would you like to try again?",
+            retry: true,
           });
-        }
+        },
       });
     } catch (e) {
       console.error(e);
       setOpening(false);
-      showToast('error', 'Could not open Affirm.');
+      showToast("error", "Could not open Affirm.");
     }
+  }
+
+  // 🔌 Mientras Affirm esté desactivado (sin public key), no mostramos el botón
+  if (!affirmEnabled) {
+    return null;
   }
 
   return (
@@ -265,7 +298,7 @@ export default function AffirmButton({
         disabled={opening || !canPay}
         className="h-9 px-3 text-sm rounded-md font-semibold bg-black text-white border border-white/20 shadow hover:bg-neutral-900 transition disabled:opacity-60"
       >
-        {opening ? 'Opening…' : 'Pay with Affirm'}
+        {opening ? "Opening…" : "Pay with Affirm"}
       </button>
 
       <Toast
@@ -278,9 +311,11 @@ export default function AffirmButton({
       <NiceModal
         open={modal.open}
         title={modal.title}
-        onClose={() => setModal({ open: false, title: '', body: '', retry: false })}
+        onClose={() =>
+          setModal({ open: false, title: "", body: "", retry: false })
+        }
         secondaryLabel="Close"
-        primaryLabel={modal.retry ? 'Retry' : undefined}
+        primaryLabel={modal.retry ? "Retry" : undefined}
         onPrimary={modal.retry ? handleClick : undefined}
       >
         {modal.body}
