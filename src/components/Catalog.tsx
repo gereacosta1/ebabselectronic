@@ -51,7 +51,7 @@ const Btn: React.FC<BtnProps> = ({
     "focus:ring-black-500 disabled:opacity-60 disabled:cursor-not-allowed";
   const variants = {
     primary:
-      "bg-purple-600 text-white hover:bg-white-700 shadow-lg hover:shadow-black-500/40 active:scale-[.98]",
+      "bg-purple-600 text-white hover:bg-purple-700 shadow-lg hover:shadow-black/40 active:scale-[.98]",
     secondary:
       "bg-black text-white border border-white/15 hover:bg-black/90 shadow-lg active:scale-[.98]",
     ghost:
@@ -74,14 +74,9 @@ const FEATURE_KEY_BY_ES: Record<string, string> = {
   "Pantalla táctil": "feature.touchscreen",
   "Conectividad Bluetooth": "feature.bluetooth",
   "Sistema de navegación GPS": "feature.gps",
-  // (si luego querés agregar más, solo añádelos acá)
 };
 
-/** ✅ Traducción robusta de features:
- * 1) product.{id}.feature.{idx} (si existe en el diccionario)
- * 2) Mapeo genérico por texto ES (FEATURE_KEY_BY_ES)
- * 3) Fallback al texto original
- */
+/** ✅ Traducción robusta de features */
 const translateFeature = (
   t: (k: string) => string,
   productId: number,
@@ -119,378 +114,140 @@ const Catalog: React.FC<CatalogProps> = ({ onViewDetails }) => {
   // 👉 carrito
   const { addItem, open } = useCart();
 
+  // ⚡ Solo 5 scooters eléctricos + parlantes JBL
   const motorcycles: Motorcycle[] = [
-    {
-      id: 1,
-      name: "MISAKI GN 150",
-      brand: "MISAKI",
-      model: "GN 150",
-      year: 2025,
-      price: 450,
-      image: "/IMG/MOTO-MISAKI-GN-150.jpeg",
-      condition: "Nueva",
-      engine: "321cc",
-      featured: true,
-      description:
-        "La MISAKI GN 150 es perfecta para principiantes y riders experimentados. Con su motor de 321cc, ofrece la potencia ideal para la ciudad y carretera.",
-      features: [
-        "ABS",
-        "Frenos de disco",
-        "Tablero digital",
-        "LED",
-        "Arranque eléctrico",
-      ],
-    },
-    {
-      id: 2,
-      name: "falcon 200cc",
-      brand: "falcon",
-      model: "falcon 200cc",
-      year: 2025,
-      price: 1000,
-      image: "/IMG/FALCON-200cc.jpeg",
-      condition: "Nueva",
-      engine: "649cc",
-      description:
-        "La falcon 200cc combina estilo naked con tecnología avanzada. Motor de 4 cilindros en línea para máximo rendimiento.",
-      features: [
-        "ABS",
-        "Control de tracción",
-        "Modos de conducción",
-        "Suspensión ajustable",
-        "Frenos Brembo",
-      ],
-    },
-    {
-      id: 3,
-      name: "XMT 250",
-      brand: "Vitacc",
-      model: "G310R",
-      year: 2025,
-      price: 820,
-      image: "/IMG/MOTO-XMT-250.jpeg",
-      condition: "Nueva",
-      engine: "313cc",
-      featured: true,
-      description:
-        "XMT 250 ofrece la calidad alemana en una moto accesible. Ideal para uso urbano con toque premium.",
-      features: [
-        "ABS",
-        "Suspensión invertida",
-        "Tablero LCD",
-        "Frenos de disco",
-        "Diseño premium",
-      ],
-    },
+    // ---------- SCOOTERS ELÉCTRICOS ----------
     {
       id: 5,
-      name: "SCOOTER ELECTRICO",
-      brand: "SCOOTER",
-      model: "SCOOTER ELECTRICO",
+      name: "Electric Scooter City",
+      brand: "EBABS",
+      model: "City 500W",
       year: 2025,
       price: 1500,
       image: "/IMG/Scooter-electrico(1).jpeg",
       condition: "Nueva",
       engine: "Electric",
-      mileage: 1200,
+      featured: true,
       description:
-        "SCOOTER ELECTRICO, la italiana por excelencia. Potencia, estilo y exclusividad en una sola moto.",
-      features: [
-        "ABS",
-        "Control de tracción",
-        "Modos de conducción",
-        "Suspensión Öhlins",
-        "Escape Termignoni",
-      ],
-    },
-    {
-      id: 6,
-      name: "TITAN 250",
-      brand: "TITAN",
-      model: "TITAN 250",
-      year: 2025,
-      price: 840,
-      image: "/IMG/TITAN-250.jpeg",
-      condition: "Nueva",
-      engine: "373cc",
-      description:
-        "TITAN 250, la bestia VERDE que domina las calles. Máxima diversión y adrenalina garantizada.",
-      features: [
-        "ABS",
-        "Control de tracción",
-        "Ride by Wire",
-        "Suspensión WP",
-        "Frenos ByBre",
-      ],
-    },
-    {
-      id: 7,
-      name: "FLASH 50cc",
-      brand: "FLASH",
-      model: "FLASH 50cc",
-      year: 2025,
-      price: 640,
-      image: "/IMG/FLASH 50cc.jpeg",
-      condition: "Nueva",
-      engine: "373cc",
-      mileage: 1200,
-      description:
-        "Flash 50cc, la italiana por excelencia. Potencia, estilo y exclusividad en una sola moto.",
-      features: [
-        "ABS",
-        "Control de tracción",
-        "Modos de conducción",
-        "Suspensión Öhlins",
-        "Escape Termignoni",
-      ],
+        "Scooter eléctrico urbano, perfecto para moverte por Miami con cero emisiones y bajo mantenimiento.",
+      features: ["Motor eléctrico", "Ligero y ágil", "Batería de alta capacidad"],
     },
     {
       id: 8,
-      name: "ELECTRIC SCOOTER 2025",
-      brand: "master sonic",
-      model: "ELECTRIC SCOOTER",
+      name: "Electric Scooter 2025",
+      brand: "Master Sonic",
+      model: "Urban Pro",
       year: 2025,
       price: 1850,
       image: "/IMG/ELECTRIC SCOOTER.jpeg",
       condition: "Nueva",
       engine: "Electric",
-      mileage: 1200,
       description:
-        "ELECTRIC SCOOTER, la italiana por excelencia. Potencia, estilo y exclusividad en una sola moto.",
-      features: ["Motor eléctrico", "Ligero y ágil", "Batería de alta capacidad"],
-    },
-    {
-      id: 9,
-      name: "MISAKI GN 150",
-      brand: "MISAKI",
-      model: "GN 150",
-      year: 2024,
-      price: 730,
-      image: "/IMG/MOTO-MISAKI-GN-150-(3).jpeg",
-      condition: "Nueva",
-      engine: "321cc",
-      featured: true,
-      description:
-        "La MISAKI GN 150 es perfecta para principiantes y riders experimentados. Con su motor de 321cc, ofrece la potencia ideal para la ciudad y carretera.",
-      features: [
-        "ABS",
-        "Frenos de disco",
-        "Tablero digital",
-        "LED",
-        "Arranque eléctrico",
-      ],
-    },
-    {
-      id: 10,
-      name: "MISAKI GN 150",
-      brand: "MISAKI",
-      model: "GN 150",
-      year: 2024,
-      price: 1060,
-      image: "/IMG/MOTO-MISAKI-GN-150-(3).jpeg",
-      condition: "Nueva",
-      engine: "321cc",
-      featured: true,
-      description:
-        "La MISAKI GN 150 es perfecta para principiantes y riders experimentados. Con su motor de 321cc, ofrece la potencia ideal para la ciudad y carretera.",
-      features: [
-        "ABS",
-        "Frenos de disco",
-        "Tablero digital",
-        "LED",
-        "Arranque eléctrico",
-      ],
-    },
-    {
-      id: 11,
-      name: "Electric Bike Pro",
-      brand: "Electric Bike",
-      model: "EBike Pro 2025",
-      year: 2025,
-      price: 1000,
-      image: "/IMG/electricBike2.jpeg",
-      condition: "Nueva",
-      engine: "Electric",
-      featured: true,
-      description:
-        "Bicicleta eléctrica de alto rendimiento, ideal para ciudad y trayectos largos.",
-      features: [
-        "Motor eléctrico",
-        "Batería de larga duración",
-        "Tablero digital",
-      ],
+        "Scooter eléctrico robusto con gran autonomía, ideal para uso diario y recorridos más largos.",
+      features: ["Motor eléctrico", "Suspensión confortable", "Autonomía extendida"],
     },
     {
       id: 12,
-      name: "Electric scooter Urban",
-      brand: "Electric scooter",
+      name: "Electric Scooter Urban",
+      brand: "EBABS",
       model: "Scooter Urban 2025",
       year: 2025,
       price: 1000,
       image: "/IMG/electricBike3.jpeg",
       condition: "Nueva",
       engine: "Electric",
-      featured: true,
       description:
-        "Bicicleta eléctrica urbana, cómoda y eficiente para el día a día.",
-      features: ["Motor eléctrico", "Diseño compacto", "Autonomía extendida"],
-    },
-    {
-      id: 13,
-      name: "Parlante JBL GO",
-      brand: "JBL",
-      model: "GO 2025",
-      year: 2025,
-      price: 400,
-      image: "/IMG/parlanteJBL.jpeg",
-      condition: "Nueva",
-      engine: "373cc",
-      featured: true,
-      description: "Parlante JBL portátil, sonido potente y diseño compacto.",
-      features: ["Bluetooth", "Resistente al agua", "Batería recargable"],
-    },
-    {
-      id: 14,
-      name: "Parlante JBL Flip",
-      brand: "JBL",
-      model: "Flip 2025",
-      year: 2025,
-      price: 300,
-      image: "/IMG/parlanteJBL2.jpeg",
-      condition: "Nueva",
-      engine: "373cc",
-      featured: true,
-      description: "Parlante JBL Flip, ideal para fiestas y exteriores.",
-      features: ["Bluetooth", "Gran autonomía", "Sonido envolvente"],
-    },
-    {
-      id: 15,
-      name: "Ruedas (Neumáticos)",
-      brand: "Universal",
-      model: "Rueda Premium 2025",
-      year: 2025,
-      price: 60,
-      image: "/IMG/ruedas.jpeg",
-      condition: "Nueva",
-      engine: "373cc",
-      featured: true,
-      description:
-        "Neumáticos de alta calidad para motos y bicicletas eléctricas.",
-      features: ["Alta durabilidad", "Agarre superior", "Diseño moderno"],
-    },
-    {
-      id: 16,
-      name: "Bici electrica Premium",
-      brand: "Universal",
-      model: "Scooter Premium 2025",
-      year: 2025,
-      price: 3500,
-      image: "/IMG/bici-electric-negra.jpeg",
-      condition: "Nueva",
-      engine: "electric",
-      featured: true,
-      description:
-        "Bicicleta eléctrica premium, ideal para viajes largos y confort en la ciudad.",
-      features: [
-        "Motor potente",
-        "Batería de larga duración",
-        "Diseño ergonómico",
-      ],
-    },
-    {
-      id: 17,
-      name: "scooter Amazta",
-      brand: "Amazta",
-      model: "Scooter Amazta 2025",
-      year: 2025,
-      price: 2500,
-      image: "/IMG/scooter-azul-oscuro.jpeg",
-      condition: "Nueva",
-      engine: "electric",
-      featured: true,
-      description:
-        "Scooter Amazta, la combinación perfecta de estilo y tecnología. Ideal para desplazamientos urbanos.",
-      features: [
-        "Motor eléctrico",
-        "Diseño moderno",
-        "Batería de larga duración",
-      ],
+        "Modelo compacto y ligero, pensado para la ciudad. Fácil de manejar y de guardar.",
+      features: ["Motor eléctrico", "Diseño compacto", "Batería removible"],
     },
     {
       id: 18,
-      name: "scooter movelito",
-      brand: "movelito",
+      name: "Scooter Movelito",
+      brand: "Movelito",
       model: "Scooter Movelito 2025",
       year: 2025,
       price: 1850,
       image: "/IMG/scooter-azul.jpeg",
       condition: "Nueva",
-      engine: "electric",
+      engine: "Electric",
       featured: true,
       description:
-        "Scooter Movelito, compacto y eficiente. Perfecto para la ciudad con un diseño atractivo.",
+        "Scooter eléctrico con diseño moderno y cómodo, ideal para el día a día.",
       features: ["Motor eléctrico", "Ligero y ágil", "Batería de alta capacidad"],
     },
     {
-      id: 19,
-      name: "scooter premium galaxy",
-      brand: "galaxy",
-      model: "Scooter Premium Galaxy 2025",
-      year: 2025,
-      price: 2000,
-      image: "/IMG/scooter-rojo.jpeg",
-      condition: "Nueva",
-      engine: "electric",
-      featured: true,
-      description:
-        "Scooter Premium Galaxy, la última innovación en movilidad urbana. Con un diseño futurista y tecnología avanzada.",
-      features: [
-        "Motor eléctrico de alta potencia",
-        "Pantalla táctil",
-        "Conectividad Bluetooth",
-        "Sistema de navegación GPS",
-      ],
-    },
-    {
       id: 20,
-      name: "scooter eléctrico hiboy",
-      brand: "hiboy",
-      model: "scooter eléctrico hiboy",
+      name: "Scooter Eléctrico Hiboy",
+      brand: "Hiboy",
+      model: "Hiboy 2025",
       year: 2025,
       price: 500,
       image: "/IMG/scooter-electrico-hiboy.jpg",
       condition: "Nueva",
-      engine: "electric",
+      engine: "Electric",
+      description:
+        "Opción accesible para comenzar en la movilidad eléctrica, perfecta para trayectos cortos.",
+      features: ["Motor eléctrico", "Plegable", "Freno regenerativo"],
+    },
+
+    // ---------- PARLANTES JBL ----------
+    {
+      id: 21,
+      name: "JBL Charge 4",
+      brand: "JBL",
+      model: "Charge 4",
+      year: 2025,
+      price: 150,
+      image: "/IMG/jbl-charge-4.jpeg",
+      condition: "Nueva",
       featured: true,
       description:
-        "Scooter Movelito, compacto y eficiente. Perfecto para la ciudad con un diseño atractivo.",
-      features: ["Motor eléctrico", "Ligero y ágil", "Batería de alta capacidad"],
+        "Parlante JBL Charge 4 con batería de larga duración y sonido potente para interior y exterior.",
+      features: ["Bluetooth", "Resistente al agua", "Batería recargable"],
     },
     {
-      id: 5001,
-      name: "Electric Cargo Tricycle",
-      brand: "MZ",
-      model: "E-Cargo",
+      id: 22,
+      name: "JBL GO 4",
+      brand: "JBL",
+      model: "GO 4",
       year: 2025,
-      price: 5000,
-      image: "/IMG/triciclo-negro.jpeg",
-      // Si tu modal soporta galería, destapá esta línea y asegurá los archivos:
-      // @ts-ignore
-      gallery: [
-        "/IMG/triciclo-rojo.jpeg",
-        "/IMG/triciclo-rojo2.jpeg",
-        "/IMG/triciclo-rojo3.jpeg",
-      ],
+      price: 50,
+      image: "/IMG/jbl-go-4.jpeg",
       condition: "Nueva",
-      engine: "Electric",
+      description:
+        "Parlante ultra compacto para llevar en el bolsillo. Ideal para uso diario.",
+      features: ["Bluetooth", "Tamaño compacto", "Hasta 8h de batería"],
+    },
+    {
+      id: 23,
+      name: "JBL Party Box",
+      brand: "JBL",
+      model: "Party Box",
+      year: 2025,
+      price: 800,
+      image: "/IMG/jbl-party-box.jpeg",
+      condition: "Nueva",
       featured: true,
       description:
-        "Robust electric cargo tricycle ideal for deliveries and utility tasks. Durable chassis, large rear cargo bed, weather canopy and comfortable seating. Financing available.",
-      features: ["Motor eléctrico", "Ligero y ágil", "Batería de alta capacidad"],
+        "JBL Party Box con luces LED y sonido de alta potencia, perfecto para eventos y fiestas.",
+      features: ["Alta potencia", "Luces LED", "Entradas para micrófono"],
+    },
+    {
+      id: 24,
+      name: "JBL Flip 6",
+      brand: "JBL",
+      model: "Flip 6",
+      year: 2025,
+      price: 200,
+      image: "/IMG/jbl-flip-6.jpeg",
+      condition: "Nueva",
+      description:
+        "Parlante JBL Flip 6 resistente al agua, con sonido equilibrado y fácil de transportar.",
+      features: ["Bluetooth", "Resistente al agua", "Diseño portátil"],
     },
   ];
 
-  // Mostrar solo eléctricos o productos sin motor (JBL/ruedas)
+  // Mostrar solo eléctricos o productos sin motor (parlantes JBL)
   const onlyElectricOrNoEngine = motorcycles.filter(
     (m) => (m.engine && m.engine.toLowerCase() === "electric") || !m.engine
   );
@@ -571,7 +328,7 @@ const Catalog: React.FC<CatalogProps> = ({ onViewDetails }) => {
                     loading="lazy"
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
-                      if (target.src.endsWith("/fallback.png")) return; // evita loop si también falla el fallback
+                      if (target.src.endsWith("/fallback.png")) return;
                       target.src = "/fallback.png";
                     }}
                   />

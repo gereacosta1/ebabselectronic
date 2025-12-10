@@ -7,6 +7,8 @@ import {
   Wrench,
   ChevronLeft,
   ChevronRight,
+  MapPin,
+  Building2,
 } from 'lucide-react';
 import UnderlineGrow from '../components/UnderlineGrow';
 import { useI18n } from '../i18n/I18nProvider';
@@ -225,6 +227,76 @@ const About: React.FC = () => {
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        {/* NEXTDRIVE location block */}
+        <div className="mt-20">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-purple-700 via-purple-600 to-fuchsia-600 text-white px-6 py-10 md:px-10 md:py-12 shadow-2xl">
+            {/* Glows */}
+            <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+            <div className="pointer-events-none absolute -left-16 bottom-0 h-44 w-44 rounded-full bg-black/20 blur-3xl" />
+
+            <div className="relative grid md:grid-cols-2 gap-10 items-center">
+              {/* Text */}
+              <div>
+                <span className="inline-flex items-center gap-2 rounded-full bg-black/20 px-4 py-1 text-xs md:text-sm font-semibold tracking-[0.18em] uppercase text-purple-100">
+                  <MapPin className="w-4 h-4" />
+                  Showroom &amp; Service Location
+                </span>
+
+                <h3 className="mt-4 text-2xl md:text-3xl font-black leading-tight">
+                  We operate inside{' '}
+                  <span className="underline decoration-yellow-300">
+                    NEXTDRIVE OF SOUTH FLORIDA
+                  </span>
+                </h3>
+
+                <p className="mt-4 text-sm md:text-base text-purple-50/90 max-w-xl">
+                  EBABS ELECTRONIC LLC atiende a sus clientes desde el edificio
+                  de NEXTDRIVE OF SOUTH FLORIDA, donde podés ver nuestras
+                  e-bikes, scooters y hacer pruebas antes de comprar.
+                </p>
+
+                <p className="mt-3 text-sm md:text-base text-purple-50/90 max-w-xl">
+                  Dirección:{' '}
+                  <strong>811 NE 79th St, Miami, FL</strong>. Aquí también
+                  recibís soporte técnico y retiro de pedidos online.
+                </p>
+
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-black/25 px-4 py-2 text-xs md:text-sm font-semibold">
+                    <Building2 className="w-4 h-4" />
+                    Physical showroom
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-black/25 px-4 py-2 text-xs md:text-sm font-semibold">
+                    ⚡ Test rides &amp; pick-up
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-black/25 px-4 py-2 text-xs md:text-sm font-semibold">
+                    🛠 Technical service on site
+                  </span>
+                </div>
+              </div>
+
+             {/* Image */}
+            <div className="relative min-h-[260px] md:min-h-[360px] lg:min-h-[420px] flex items-center">
+              <div className="w-full h-full rounded-3xl overflow-hidden border border-purple-200 bg-black/20 shadow-2xl">
+                <img
+                  src="/IMG/nextdrive-building.jpeg"
+                  alt="NextDrive of South Florida building where EBABS Electronic operates"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              <div className="absolute bottom-6 left-6">
+                <div className="inline-flex items-center gap-2 rounded-full bg-black/70 backdrop-blur px-4 py-2 text-xs md:text-sm font-semibold border border-white/15">
+                  <MapPin className="w-4 h-4 text-yellow-300" />
+                  Located inside NEXTDRIVE OF SOUTH FLORIDA
+                </div>
+              </div>
+            </div>
+
+            </div>
           </div>
         </div>
       </div>

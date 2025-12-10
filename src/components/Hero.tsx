@@ -10,9 +10,9 @@ const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
   return (
     <section
       id="inicio"
-      className="pt-32 bg-gradient-to-r from-purple-700 via-purple-600 to-indigo-700"
+      className="pt-32 pb-20 min-h-screen flex items-center bg-gradient-to-r from-purple-700 via-purple-600 to-indigo-700"
     >
-      <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
+      <div className="w-full max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
         {/* Texto */}
         <div className="text-white">
           <p className="uppercase tracking-[0.2em] text-sm md:text-base mb-3 text-yellow-300">
@@ -20,7 +20,7 @@ const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
           </p>
 
           <h1 className="font-black text-4xl md:text-5xl lg:text-6xl leading-tight mb-4">
-            Electric Mobility & Electronics
+            Electric Mobility &amp; Electronics
             <span className="block text-yellow-300">For Everyday Life ⚡</span>
           </h1>
 
@@ -64,13 +64,24 @@ const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
             />
           </div>
 
-          <div className="absolute -bottom-6 -left-4 bg-white rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-lg">
+          {/* Badge dirección + teléfono */}
+          <div className="absolute bottom-4 left-4 bg-white rounded-2xl shadow-xl px-5 py-3 flex items-center gap-3 border border-purple-200">
+            {/* Icono */}
+            <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-lg shadow-md">
               ⚡
             </div>
-            <div className="text-sm">
-              <p className="font-bold text-gray-800">811 NE 79th St, Miami</p>
-              <p className="text-gray-500 text-xs">Open 10:30 AM – 7:00 PM</p>
+
+            {/* Texto */}
+            <div className="leading-tight">
+              <p className="text-base font-black text-gray-900">
+                811 NE 79th St, Miami FL
+              </p>
+              <p className="text-sm font-semibold text-purple-700">
+                (786) 968 1621
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Open 10:30 AM – 7:00 PM
+              </p>
             </div>
           </div>
         </div>
