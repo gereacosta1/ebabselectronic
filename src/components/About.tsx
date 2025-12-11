@@ -115,7 +115,7 @@ const About: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="grid md:grid-cols-2 gap-10 items-center mb-16">
+        <div className="grid md:grid-cols-[0.6fr_0.4fr] gap-10 items-center mb-16">
           <div>
             <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-4">
               {t('about.trust.title')}
@@ -140,49 +140,51 @@ const About: React.FC = () => {
           </div>
 
           <div className="relative">
-            <div className="relative overflow-hidden rounded-3xl shadow-xl border border-purple-100 bg-gray-900/5">
-              <img
-                src={storeImages[currentImageIndex]}
-                alt={t('about.gallery.alt')}
-                className="w-full h-80 object-cover"
-              />
+  <div className="relative overflow-hidden rounded-3xl shadow-xl border border-purple-100 bg-[#f5f7ff] flex items-center justify-center">
+    <img
+      src={storeImages[currentImageIndex]}
+      alt={t('about.gallery.alt')}
+      className="w-full max-h-[520px] md:max-h-[560px] object-contain rounded-3xl"
 
-              {/* Navigation Buttons */}
-              <button
-                onClick={prevImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 text-gray-900 p-2 rounded-full shadow hover:bg-white"
-                aria-label={t('about.gallery.prev')}
-                title={t('about.gallery.prev')}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={nextImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 text-gray-900 p-2 rounded-full shadow hover:bg-white"
-                aria-label={t('about.gallery.next')}
-                title={t('about.gallery.next')}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
+    />
 
-              {/* Indicators */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                {storeImages.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`w-2.5 h-2.5 rounded-full border ${
-                      index === currentImageIndex
-                        ? 'bg-purple-500 border-purple-500'
-                        : 'bg-white border-gray-300'
-                    }`}
-                    aria-label={`${t('about.gallery.seeImage')} ${index + 1}`}
-                    title={`${t('about.gallery.seeImage')} ${index + 1}`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
+    {/* Navigation Buttons */}
+    <button
+      onClick={prevImage}
+      className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 text-gray-900 p-2 rounded-full shadow hover:bg-white"
+      aria-label={t('about.gallery.prev')}
+      title={t('about.gallery.prev')}
+    >
+      <ChevronLeft className="w-5 h-5" />
+    </button>
+    <button
+      onClick={nextImage}
+      className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 text-gray-900 p-2 rounded-full shadow hover:bg-white"
+      aria-label={t('about.gallery.next')}
+      title={t('about.gallery.next')}
+    >
+      <ChevronRight className="w-5 h-5" />
+    </button>
+
+    {/* Indicators */}
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+      {storeImages.map((_, index) => (
+        <button
+          key={index}
+          onClick={() => setCurrentImageIndex(index)}
+          className={`w-2.5 h-2.5 rounded-full border ${
+            index === currentImageIndex
+              ? 'bg-purple-500 border-purple-500'
+              : 'bg-white border-gray-300'
+          }`}
+          aria-label={`${t('about.gallery.seeImage')} ${index + 1}`}
+          title={`${t('about.gallery.seeImage')} ${index + 1}`}
+        />
+      ))}
+    </div>
+  </div>
+</div>
+
         </div>
 
         {/* Services */}
@@ -279,23 +281,25 @@ const About: React.FC = () => {
                 </div>
               </div>
 
-             {/* Image */}
-            <div className="relative min-h-[260px] md:min-h-[360px] lg:min-h-[420px] flex items-center">
-              <div className="w-full h-full rounded-3xl overflow-hidden border border-purple-200 bg-black/20 shadow-2xl">
-                <img
-                  src="/IMG/nextdrive-building.jpeg"
-                  alt="NextDrive of South Florida building where EBABS Electronic operates"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+         {/* Image */}
+        <div className="relative min-h-[220px] md:min-h-[300px] lg:min-h-[360px] flex items-center">
+          <div className="w-full h-full rounded-3xl overflow-hidden border border-purple-200 bg-black/20 shadow-2xl flex items-center justify-center">
+            <img
+              src="/IMG/nextdrive-building.jpeg"
+              alt="NextDrive of South Florida building where EBABS Electronic operates"
+              className="w-full h-full object-contain"
+            />
+          </div>
 
-              <div className="absolute bottom-6 left-6">
-                <div className="inline-flex items-center gap-2 rounded-full bg-black/70 backdrop-blur px-4 py-2 text-xs md:text-sm font-semibold border border-white/15">
-                  <MapPin className="w-4 h-4 text-yellow-300" />
-                  Located inside NEXTDRIVE OF SOUTH FLORIDA
-                </div>
-              </div>
+          <div className="absolute bottom-6 left-6">
+            <div className="inline-flex items-center gap-2 rounded-full bg-black/70 backdrop-blur px-4 py-2 text-xs md:text-sm font-semibold border border-white/15">
+              <MapPin className="w-4 h-4 text-yellow-300" />
+              Located inside NEXTDRIVE OF SOUTH FLORIDA
             </div>
+          </div>
+        </div>
+
+
 
             </div>
           </div>
