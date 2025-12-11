@@ -68,7 +68,8 @@ const About: React.FC = () => {
   ] as const;
 
   return (
-    <section id="nosotros" className="py-20 bg-[#f5f5fb]">
+   <section id="about" className="pt-10 pb-24 bg-[#f5f7ff]">
+
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-6xl font-black text-gray-900 mb-4">

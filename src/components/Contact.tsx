@@ -112,7 +112,8 @@ const Contact: React.FC<ContactProps> = ({ onPhoneCall, onWhatsApp, onEmail }) =
   ];
 
   return (
-    <section id="contacto" className="py-24 bg-black text-white">
+    <section id="contacto" className="pt-10 pb-24 bg-black text-white">
+
       <div className="max-w-6xl mx-auto px-4">
 
         {/* Title */}

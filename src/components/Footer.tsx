@@ -4,7 +4,7 @@ import { MapPin, Phone, Mail, Clock, Instagram, Facebook, MessageCircle } from '
 
 export default function Footer() {
   return (
-    <footer className="mt-24 bg-black text-white pt-12 pb-8 border-t border-purple-500/40">
+   <footer className="bg-black text-white pt-16 pb-8 border-t border-purple-500/40">
       <div className="max-w-6xl mx-auto px-4">
         {/* Header / marca */}
         <div className="text-center mb-10">
@@ -14,7 +14,7 @@ export default function Footer() {
             EBABS ELECTRONIC LLC
           </h2>
           <p className="mt-2 text-sm text-gray-400">
-            Electric Mobility & Electronics for Everyday Life
+            Electric Mobility &amp; Electronics for Everyday Life
           </p>
         </div>
 
@@ -32,8 +32,8 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-purple-400" />
-                <a href="tel:+13050000000" className="hover:text-purple-200">
-                  +1 (305) 000-0000
+                <a href="tel:+17869681621" className="hover:text-purple-200">
+                  (786) 968 1621
                 </a>
               </li>
               <li className="flex items-center gap-2">
@@ -48,7 +48,7 @@ export default function Footer() {
               <li className="flex items-start gap-2">
                 <Clock className="w-4 h-4 mt-[2px] text-purple-400" />
                 <span>
-                  Mon – Sat: 10:00 AM – 7:30 PM
+                  Mon – Sat: 10:30 AM – 7:00 PM
                   <br />
                   Sun: 10:00 AM – 6:00 PM
                 </span>
@@ -93,13 +93,13 @@ export default function Footer() {
           {/* Columna 3: servicios / redes */}
           <div>
             <h3 className="text-sm font-semibold tracking-wide text-purple-200 uppercase mb-4">
-              Services & Social
+              Services &amp; Social
             </h3>
             <ul className="space-y-2 text-gray-300 mb-4">
-              <li>• New & used electric scooters</li>
-              <li>• E-bikes & cargo trikes</li>
-              <li>• Technical service & repairs</li>
-              <li>• Electronics & accessories</li>
+              <li>• New &amp; used electric scooters</li>
+              <li>• E-bikes &amp; cargo trikes</li>
+              <li>• Technical service &amp; repairs</li>
+              <li>• Electronics &amp; accessories</li>
             </ul>
 
             <div className="flex items-center gap-3 mt-2">
@@ -134,7 +134,7 @@ export default function Footer() {
 
         {/* línea final */}
         <div className="mt-10 border-t border-white/10 pt-4 text-center text-xs text-gray-500">
-          © {new Date().getFullYear()} EBABS ELECTRONIC. All rights reserved.
+          © {new Date().getFullYear()} EBABS ELECTRONIC LLC. All rights reserved.
         </div>
       </div>
     </footer>
