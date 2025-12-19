@@ -1,5 +1,5 @@
 // src/components/AffirmButton.tsx
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { loadAffirm, AFFIRM_ENABLED } from "../lib/affirm";
 import {
   buildAffirmCheckout,
@@ -23,10 +23,10 @@ type Props = {
   customer?: Customer;
 };
 
-const MIN_TOTAL_CENTS = 5000;
+const MIN_TOTAL_CENTS = 5000; // $50
 const toCents = (usd = 0) => Math.round((Number(usd) || 0) * 100);
 
-/* Toast + NiceModal */
+/* Toast */
 function Toast({
   show,
   type,
@@ -86,10 +86,7 @@ function NiceModal({
       <div className="relative bg-white rounded-2xl shadow-2xl w-[95%] max-w-md p-6">
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-xl font-black text-gray-900">{title}</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-800"
-          >
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
             ✕
           </button>
         </div>
@@ -129,17 +126,18 @@ export default function AffirmButton({
   const PUBLIC_KEY = (import.meta.env.VITE_AFFIRM_PUBLIC_KEY || "").trim();
   const ENV = (import.meta.env.VITE_AFFIRM_ENV || "prod") as "prod" | "sandbox";
 
-  if (!PUBLIC_KEY) {
-    return null;
-  }
+  // Si no hay public key, no mostramos nada (evita romper la UI)
+  if (!PUBLIC_KEY) return null;
 
   const [ready, setReady] = useState(false);
   const [opening, setOpening] = useState(false);
+
   const [toast, setToast] = useState({
     show: false,
     type: "info" as "success" | "error" | "info",
     message: "",
   });
+
   const [modal, setModal] = useState({
     open: false,
     title: "",
@@ -155,38 +153,37 @@ export default function AffirmButton({
     ms = 2200
   ) => {
     setToast({ show: true, type, message });
-    setTimeout(() => setToast((s) => ({ ...s, show: false })), ms);
+    window.setTimeout(() => setToast((s) => ({ ...s, show: false })), ms);
   };
 
   useEffect(() => {
-    // Si no hay clave, loadAffirm solo loguea y resuelve sin romper nada
     loadAffirm(PUBLIC_KEY, ENV)
       .then(() => setReady(true))
       .catch(() => setReady(false));
-  }, []);
+  }, [PUBLIC_KEY, ENV]);
 
-  const mapped: Item[] = cartItems.map((it, i) => ({
-    id: it.id ?? it.sku ?? i + 1,
-    title: it.name,
-    price: it.price,
-    qty: Math.max(1, Number(it.qty) || 1),
-    url: it.url ?? "/",
-    image: it.image,
-  }));
-
-  const subtotalC = mapped.reduce(
-    (acc, it) => acc + toCents(it.price) * it.qty,
-    0
+  const mapped: Item[] = useMemo(
+    () =>
+      cartItems.map((it, i) => ({
+        id: it.id ?? it.sku ?? i + 1,
+        title: it.name,
+        price: it.price,
+        qty: Math.max(1, Number(it.qty) || 1),
+        url: it.url ?? "/",
+        image: it.image,
+      })),
+    [cartItems]
   );
+
+  const subtotalC = mapped.reduce((acc, it) => acc + toCents(it.price) * it.qty, 0);
   const shippingC = toCents(shippingUSD);
   const taxC = toCents(taxUSD);
-  const totalC =
-    typeof totalUSD === "number"
-      ? toCents(totalUSD)
-      : subtotalC + shippingC + taxC;
 
-  // Solo permitimos pagar si Affirm está habilitado + SDK listo + monto mínimo
-  const canPay = affirmEnabled && ready && mapped.length > 0 && totalC >= MIN_TOTAL_CENTS;
+  const totalC =
+    typeof totalUSD === "number" ? toCents(totalUSD) : subtotalC + shippingC + taxC;
+
+  const canPay =
+    affirmEnabled && ready && mapped.length > 0 && totalC >= MIN_TOTAL_CENTS;
 
   async function handleClick() {
     const affirm = (window as any).affirm;
@@ -229,13 +226,25 @@ export default function AffirmButton({
               body: JSON.stringify({
                 checkout_token,
                 order_id: "ORDER-" + Date.now(),
-                amount_cents: checkout.total,
+                amount_cents: totalC,
                 capture: true,
               }),
             });
 
-            console.log("affirm-authorize →", await r.json());
-            showToast("success", "Request submitted!");
+            const data = await r.json();
+            console.log("affirm-authorize →", data);
+
+            if (!r.ok) {
+              setModal({
+                open: true,
+                title: "Server error",
+                body: "Affirm was approved, but the server could not confirm the charge.",
+                retry: true,
+              });
+              return;
+            }
+
+            showToast("success", "Affirm request submitted!");
           } catch (e) {
             setModal({
               open: true,
@@ -285,10 +294,7 @@ export default function AffirmButton({
     }
   }
 
-  // 🔌 Mientras Affirm esté desactivado (sin public key), no mostramos el botón
-  if (!affirmEnabled) {
-    return null;
-  }
+  if (!affirmEnabled) return null;
 
   return (
     <>
@@ -311,9 +317,7 @@ export default function AffirmButton({
       <NiceModal
         open={modal.open}
         title={modal.title}
-        onClose={() =>
-          setModal({ open: false, title: "", body: "", retry: false })
-        }
+        onClose={() => setModal({ open: false, title: "", body: "", retry: false })}
         secondaryLabel="Close"
         primaryLabel={modal.retry ? "Retry" : undefined}
         onPrimary={modal.retry ? handleClick : undefined}

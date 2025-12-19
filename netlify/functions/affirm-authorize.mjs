@@ -1,30 +1,40 @@
 // netlify/functions/affirm-authorize.mjs
-// API v2: crea el charge desde checkout_token y (opcional) captura el pago
+// API v2: crea el charge desde checkout_token y (opcional) captura el pago.
+//
+// ENV requeridas en Netlify:
+// - AFFIRM_PUBLIC_KEY  (o AFFIRM_PUBLIC_API_KEY)
+// - AFFIRM_PRIVATE_KEY (o AFFIRM_PRIVATE_API_KEY)
+// - AFFIRM_ENV = "prod" | "production" | "sandbox"  (opcional; default sandbox si no es prod)
 
-// Detecta producción (acepta "prod" o "production"), también si viene de Vite
-const envRaw = String(process.env.AFFIRM_ENV || process.env.VITE_AFFIRM_ENV || "").toLowerCase();
+const envRaw = String(
+  process.env.AFFIRM_ENV || process.env.VITE_AFFIRM_ENV || ""
+).toLowerCase();
+
 const isProd = envRaw === "prod" || envRaw === "production";
+
+// Base v2 (prod / sandbox)
 const BASE = isProd
   ? "https://api.affirm.com/api/v2"
-  : "https://api.sandbox.affirm.com/api/v2"; // sandbox correcto
+  : "https://api.sandbox.affirm.com/api/v2";
 
-// CORS básico
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-// Logging seguro (recorta)
-const safe = (o) => {
-  try { return JSON.stringify(o, null, 2).slice(0, 4000); }
-  catch { return "[unserializable]"; }
-};
-
-// Por defecto capturamos (podés override con body.capture)
 const CAPTURE_DEFAULT = true;
 
-// ⬇️ ESTA es la exportación que Netlify necesita en ESM
+// Logging seguro (recorta)
+const safe = (o) => {
+  try {
+    return JSON.stringify(o, null, 2).slice(0, 4000);
+  } catch {
+    return "[unserializable]";
+  }
+};
+
+// ⬇️ Netlify necesita esta export en ESM
 export async function handler(event) {
   // Preflight
   if (event.httpMethod === "OPTIONS") {
@@ -45,10 +55,12 @@ export async function handler(event) {
         baseURL: BASE,
         nodeVersion: process.versions?.node,
         flags: {
-          HAS_AFFIRM_PUBLIC_KEY:
-            Boolean(process.env.AFFIRM_PUBLIC_API_KEY || process.env.AFFIRM_PUBLIC_KEY),
-          HAS_AFFIRM_PRIVATE_KEY:
-            Boolean(process.env.AFFIRM_PRIVATE_API_KEY || process.env.AFFIRM_PRIVATE_KEY),
+          HAS_AFFIRM_PUBLIC_KEY: Boolean(
+            process.env.AFFIRM_PUBLIC_API_KEY || process.env.AFFIRM_PUBLIC_KEY
+          ),
+          HAS_AFFIRM_PRIVATE_KEY: Boolean(
+            process.env.AFFIRM_PRIVATE_API_KEY || process.env.AFFIRM_PRIVATE_KEY
+          ),
           HAS_VITE_AFFIRM_PUBLIC_KEY: Boolean(process.env.VITE_AFFIRM_PUBLIC_KEY),
         },
       };
@@ -58,22 +70,29 @@ export async function handler(event) {
     const {
       checkout_token,
       order_id,
-      amount_cents,          // total en centavos (entero)
-      shipping_carrier,      // opcional
+      amount_cents, // total en centavos (entero)
+      shipping_carrier, // opcional
       shipping_confirmation, // opcional
-      capture,               // override de captura (true/false)
-    } = body;
+      capture, // override true/false
+    } = body || {};
 
-    if (!checkout_token || !order_id) {
-      return json(400, { error: "Missing checkout_token or order_id" });
+    if (typeof checkout_token !== "string" || !checkout_token.trim()) {
+      return json(400, { error: "Missing checkout_token" });
+    }
+    if (typeof order_id !== "string" || !order_id.trim()) {
+      return json(400, { error: "Missing order_id" });
     }
 
     // Llaves (dos variantes por si cambian los nombres en Netlify)
-    const PUB  = process.env.AFFIRM_PUBLIC_API_KEY  || process.env.AFFIRM_PUBLIC_KEY  || "";
-    const PRIV = process.env.AFFIRM_PRIVATE_API_KEY || process.env.AFFIRM_PRIVATE_KEY || "";
+    const PUB =
+      process.env.AFFIRM_PUBLIC_API_KEY || process.env.AFFIRM_PUBLIC_KEY || "";
+    const PRIV =
+      process.env.AFFIRM_PRIVATE_API_KEY || process.env.AFFIRM_PRIVATE_KEY || "";
 
     if (!PUB || !PRIV) {
-      return json(500, { error: "Missing AFFIRM keys" });
+      return json(500, {
+        error: "Missing AFFIRM keys (AFFIRM_PUBLIC_KEY / AFFIRM_PRIVATE_KEY)",
+      });
     }
 
     // Auth correcto: usuario = PUBLIC, password = PRIVATE
@@ -85,30 +104,58 @@ export async function handler(event) {
       headers: { "Content-Type": "application/json", Authorization: AUTH },
       body: JSON.stringify({ checkout_token }),
     });
+
     const charge = await tryJson(authRes);
-    console.log("[charges]", { env: isProd ? "prod" : "sandbox", status: authRes.status, resp: safe(charge) });
-    if (!authRes.ok) return json(authRes.status, { step: "charges", error: charge });
+    console.log("[affirm charges]", {
+      env: isProd ? "prod" : "sandbox",
+      status: authRes.status,
+      resp: safe(charge),
+    });
+
+    if (!authRes.ok) {
+      return json(authRes.status, { step: "charges", error: charge });
+    }
 
     // 2) Capturar si corresponde
-    const shouldCapture = typeof capture === "boolean" ? capture : CAPTURE_DEFAULT;
+    const shouldCapture =
+      typeof capture === "boolean" ? capture : CAPTURE_DEFAULT;
+
     let captureResp = null;
+
     if (shouldCapture) {
-      if (typeof amount_cents !== "number") {
-        return json(400, { error: "amount_cents required for capture=true" });
+      if (typeof amount_cents !== "number" || !Number.isFinite(amount_cents)) {
+        return json(400, {
+          error: "amount_cents required (number) for capture=true",
+        });
       }
-      const capRes = await fetch(`${BASE}/charges/${encodeURIComponent(charge.id)}/capture`, {
-        method: "POST",
-        headers: { Authorization: AUTH, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order_id,
-          amount: amount_cents, // centavos
-          shipping_carrier,
-          shipping_confirmation,
-        }),
-      });
+      const amt = Math.round(amount_cents);
+      if (amt <= 0) {
+        return json(400, { error: "amount_cents must be > 0" });
+      }
+
+      const capRes = await fetch(
+        `${BASE}/charges/${encodeURIComponent(charge.id)}/capture`,
+        {
+          method: "POST",
+          headers: { Authorization: AUTH, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            order_id: order_id.trim(),
+            amount: amt, // centavos
+            shipping_carrier,
+            shipping_confirmation,
+          }),
+        }
+      );
+
       captureResp = await tryJson(capRes);
-      console.log("[capture]", { status: capRes.status, resp: safe(captureResp) });
-      if (!capRes.ok) return json(capRes.status, { step: "capture", error: captureResp });
+      console.log("[affirm capture]", {
+        status: capRes.status,
+        resp: safe(captureResp),
+      });
+
+      if (!capRes.ok) {
+        return json(capRes.status, { step: "capture", error: captureResp });
+      }
     }
 
     return json(200, { ok: true, charge, capture: captureResp });
@@ -121,7 +168,11 @@ export async function handler(event) {
 /* ---------------- Helpers ---------------- */
 async function tryJson(res) {
   const text = await res.text();
-  try { return JSON.parse(text); } catch { return { raw: text }; }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { raw: text };
+  }
 }
 function json(statusCode, obj) {
   return {

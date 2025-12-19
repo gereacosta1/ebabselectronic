@@ -2,10 +2,10 @@
 export type CartItem = {
   id: string | number;
   title: string;
-  price: number;      // USD
+  price: number; // USD
   qty: number;
-  image?: string;     // /img/xxx.jpg
-  url?: string;       // /product/xxx
+  image?: string; // /img/xxx.jpg
+  url?: string; // /product/xxx
 };
 
 export type Totals = {
@@ -18,46 +18,51 @@ export type Customer = {
   firstName?: string;
   lastName?: string;
   email?: string;
-  phone?: string; // E.164 (+1XXXXXXXXXX) — opcional; NO lo enviaremos por defecto
+  // phone?: string; // opcional, no lo mandamos por defecto
   address?: {
     line1?: string;
     city?: string;
-    state?: string;   // "FL"
-    zip?: string;     // "33127"
+    state?: string; // "FL"
+    zip?: string; // "33127"
     country?: string; // "US"
   };
 };
 
-const toCents = (usd = 0) => Math.round((usd || 0) * 100);
+const toCents = (usd = 0) => Math.round((Number(usd) || 0) * 100);
 
-// Validadores mínimos
-const isUSState  = (v?: string) => !!v && /^[A-Z]{2}$/.test(v.toUpperCase());
-const isUSZip    = (v?: string) => !!v && /^\d{5}(-\d{4})?$/.test(v);
-const isCountryUS = (v?: string) => (v || '').toUpperCase() === 'US';
+const isUSState = (v?: string) => !!v && /^[A-Z]{2}$/.test(v.toUpperCase());
+const isUSZip = (v?: string) => !!v && /^\d{5}(-\d{4})?$/.test(v);
+const isCountryUS = (v?: string) => (v || "").toUpperCase() === "US";
 
-// Dirección USPS REAL para cumplir con name+address y abrir el modal
-const FALLBACK_ADDR = {
-  line1:  '297 NW 54th St',
-  city:   'Miami',
-  state:  'FL',
-  zipcode:'33127',
-  country:'US',
-};
+function hasFullUSAddress(c?: Customer) {
+  const a = c?.address;
+  if (!a) return false;
+  return (
+    !!a.line1 &&
+    !!a.city &&
+    isUSState(a.state) &&
+    isUSZip(a.zip) &&
+    isCountryUS(a.country || "US")
+  );
+}
 
-function buildNameAndAddress(c?: Customer) {
+function buildName(c?: Customer) {
+  const first = (c?.firstName || "").trim();
+  const last = (c?.lastName || "").trim();
+  if (first || last) return { first: first || "Customer", last: last || "Online" };
+  // Si no hay nombre, lo omitimos y que Affirm lo pida en el modal
+  return null;
+}
+
+function buildAddress(c?: Customer) {
   const a = c?.address || {};
-  const name = {
-    first: (c?.firstName || 'Online').trim(),
-    last:  (c?.lastName  || 'Customer').trim(),
+  return {
+    line1: String(a.line1 || "").trim(),
+    city: String(a.city || "").trim(),
+    state: String(a.state || "").trim().toUpperCase(),
+    zipcode: String(a.zip || "").trim(),
+    country: String(a.country || "US").trim().toUpperCase(),
   };
-  const addr = {
-    line1:   (a.line1   && a.line1.trim())   || FALLBACK_ADDR.line1,
-    city:    (a.city    && a.city.trim())    || FALLBACK_ADDR.city,
-    state:    isUSState(a.state)   ? a.state!.trim()   : FALLBACK_ADDR.state,
-    zipcode:  isUSZip(a.zip)       ? a.zip!.trim()     : FALLBACK_ADDR.zipcode,
-    country:  isCountryUS(a.country)? a.country!.trim(): FALLBACK_ADDR.country,
-  };
-  return { name, addr };
 }
 
 export function buildAffirmCheckout(
@@ -71,36 +76,50 @@ export function buildAffirmCheckout(
     sku: String(p.id),
     unit_price: toCents(p.price),
     qty: Math.max(1, Number(p.qty) || 1),
-    item_url: (p.url?.startsWith('http') ? p.url : merchantBase + (p.url || '/')),
-    image_url: p.image ? (p.image.startsWith('http') ? p.image : merchantBase + p.image) : undefined,
+    item_url: p.url?.startsWith("http") ? p.url : merchantBase + (p.url || "/"),
+    image_url: p.image
+      ? p.image.startsWith("http")
+        ? p.image
+        : merchantBase + p.image
+      : undefined,
   }));
 
   const shippingC = toCents(totals.shippingUSD ?? 0);
-  const taxC      = toCents(totals.taxUSD ?? 0);
+  const taxC = toCents(totals.taxUSD ?? 0);
   const subtotalC = mapped.reduce((acc, it) => acc + it.unit_price * it.qty, 0);
-  const totalC    = subtotalC + shippingC + taxC;
-
-  // Nombre/dirección válidos para billing y shipping (sin teléfono)
-  const { name, addr } = buildNameAndAddress(customer);
+  const totalC = subtotalC + shippingC + taxC;
 
   const payload: any = {
     merchant: {
-      user_confirmation_url: merchantBase + '/affirm/confirm.html',
-      user_cancel_url:       merchantBase + '/affirm/cancel.html',
-      user_confirmation_url_action: 'GET',
-      name: 'ONE WAY MOTORS',
+      user_confirmation_url: merchantBase + "/affirm/confirm.html",
+      user_cancel_url: merchantBase + "/affirm/cancel.html",
+      user_confirmation_url_action: "GET",
+      name: "EBABS ELECTRONIC LLC",
     },
-    // Enviamos ambos bloques; shipping = billing
-    billing: { name, address: addr },
-    shipping:{ name, address: addr },
     items: mapped,
-    currency: 'USD',
+    currency: "USD",
     shipping_amount: shippingC,
     tax_amount: taxC,
     total: totalC,
-    metadata: { mode: 'modal' },
+    metadata: { mode: "modal" },
   };
 
-  // No mandamos phone_number para evitar rechazos; Affirm lo pide en el modal si hace falta.
+  // Solo mandamos billing/shipping si el customer tiene dirección REAL completa.
+  // Si no, Affirm lo va a pedir en el modal (mejor que mandar una dirección fake).
+  if (hasFullUSAddress(customer)) {
+    const name = buildName(customer) || { first: "Customer", last: "Online" };
+    const addr = buildAddress(customer);
+
+    payload.billing = { name, address: addr };
+    payload.shipping = { name, address: addr };
+  } else {
+    const name = buildName(customer);
+    if (name) {
+      // Si hay nombre pero no hay address, mandamos nombre solo
+      payload.billing = { name };
+      payload.shipping = { name };
+    }
+  }
+
   return payload;
 }
