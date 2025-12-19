@@ -20,13 +20,15 @@ type Props = {
   totalUSD?: number;
   shippingUSD?: number;
   taxUSD?: number;
-  customer?: Customer;
 };
 
 const MIN_TOTAL_CENTS = 5000; // $50 mínimo
 const toCents = (usd = 0) => Math.round((Number(usd) || 0) * 100);
 
-/* ---------- Toast simple ---------- */
+const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+const isUSState = (v: string) => /^[A-Z]{2}$/.test(v.trim().toUpperCase());
+const isUSZip = (v: string) => /^\d{5}(-\d{4})?$/.test(v.trim());
+
 function Toast({
   show,
   type,
@@ -66,6 +68,7 @@ function NiceModal({
   onPrimary,
   secondaryLabel,
   onClose,
+  disableClose,
 }: {
   open: boolean;
   title: string;
@@ -74,6 +77,7 @@ function NiceModal({
   onPrimary?: () => void;
   secondaryLabel?: string;
   onClose: () => void;
+  disableClose?: boolean;
 }) {
   if (!open) return null;
 
@@ -81,14 +85,18 @@ function NiceModal({
     <div className="fixed inset-0 z-[9998] flex items-center justify-center">
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={disableClose ? undefined : onClose}
       />
       <div className="relative bg-white rounded-2xl shadow-2xl w-[95%] max-w-md p-6">
         <div className="flex items-start justify-between mb-4">
           <h3 className="text-xl font-black text-gray-900">{title}</h3>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-800"
+            className={`text-gray-500 hover:text-gray-800 ${
+              disableClose ? "opacity-40 pointer-events-none" : ""
+            }`}
+            aria-label="Close"
+            title={disableClose ? "Complete the form to continue" : "Close"}
           >
             ✕
           </button>
@@ -100,7 +108,9 @@ function NiceModal({
           {secondaryLabel && (
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+              className={`px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 ${
+                disableClose ? "opacity-40 pointer-events-none" : ""
+              }`}
             >
               {secondaryLabel}
             </button>
@@ -119,28 +129,157 @@ function NiceModal({
   );
 }
 
+type BuyerForm = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  line1: string;
+  city: string;
+  state: string;
+  zip: string;
+};
+
+function BuyerInfoForm({
+  value,
+  onChange,
+}: {
+  value: BuyerForm;
+  onChange: (next: BuyerForm) => void;
+}) {
+  const set = (k: keyof BuyerForm, v: string) => onChange({ ...value, [k]: v });
+
+  const inputClass =
+    "w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10";
+
+  const labelClass = "text-xs font-semibold text-gray-700";
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-gray-600">
+        To continue with Affirm, please enter the buyer information (name and US
+        address).
+      </p>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <div className={labelClass}>First name</div>
+          <input
+            className={inputClass}
+            value={value.firstName}
+            onChange={(e) => set("firstName", e.target.value)}
+            autoComplete="given-name"
+          />
+        </div>
+        <div>
+          <div className={labelClass}>Last name</div>
+          <input
+            className={inputClass}
+            value={value.lastName}
+            onChange={(e) => set("lastName", e.target.value)}
+            autoComplete="family-name"
+          />
+        </div>
+      </div>
+
+      <div>
+        <div className={labelClass}>Email</div>
+        <input
+          className={inputClass}
+          value={value.email}
+          onChange={(e) => set("email", e.target.value)}
+          autoComplete="email"
+        />
+      </div>
+
+      <div>
+        <div className={labelClass}>Address line 1</div>
+        <input
+          className={inputClass}
+          value={value.line1}
+          onChange={(e) => set("line1", e.target.value)}
+          autoComplete="address-line1"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <div className={labelClass}>City</div>
+          <input
+            className={inputClass}
+            value={value.city}
+            onChange={(e) => set("city", e.target.value)}
+            autoComplete="address-level2"
+          />
+        </div>
+        <div>
+          <div className={labelClass}>State (2 letters)</div>
+          <input
+            className={inputClass}
+            value={value.state}
+            onChange={(e) => set("state", e.target.value.toUpperCase())}
+            maxLength={2}
+            autoComplete="address-level1"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <div className={labelClass}>ZIP</div>
+          <input
+            className={inputClass}
+            value={value.zip}
+            onChange={(e) => set("zip", e.target.value)}
+            autoComplete="postal-code"
+          />
+        </div>
+        <div>
+          <div className={labelClass}>Country</div>
+          <input className={inputClass} value="US" disabled />
+        </div>
+      </div>
+
+      <p className="text-xs text-gray-500">
+        We use this information only to create the Affirm checkout.
+      </p>
+    </div>
+  );
+}
+
 export default function AffirmButton({
   cartItems = [],
   totalUSD,
   shippingUSD = 0,
   taxUSD = 0,
-  customer,
 }: Props) {
   const PUBLIC_KEY = (import.meta.env.VITE_AFFIRM_PUBLIC_KEY || "").trim();
   const ENV = (import.meta.env.VITE_AFFIRM_ENV || "prod") as "prod" | "sandbox";
 
   const [ready, setReady] = useState(false);
   const [opening, setOpening] = useState(false);
+
   const [toast, setToast] = useState({
     show: false,
     type: "info" as "success" | "error" | "info",
     message: "",
   });
+
   const [modal, setModal] = useState({
     open: false,
     title: "",
     body: "",
     retry: false,
+  });
+
+  const [buyerModalOpen, setBuyerModalOpen] = useState(false);
+  const [buyer, setBuyer] = useState<BuyerForm>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    line1: "",
+    city: "",
+    state: "",
+    zip: "",
   });
 
   const showToast = (
@@ -152,7 +291,7 @@ export default function AffirmButton({
     window.setTimeout(() => setToast((s) => ({ ...s, show: false })), ms);
   };
 
-  // Mapeo a formato affirmCheckout
+  // Map a formato affirmCheckout
   const mapped: Item[] = useMemo(
     () =>
       cartItems.map((it, i) => ({
@@ -178,8 +317,7 @@ export default function AffirmButton({
       ? toCents(totalUSD)
       : subtotalC + shippingC + taxC;
 
-  // ✅ condiciones de pago
-  const affirmEnabled = !!PUBLIC_KEY;;
+  const affirmEnabled = !!PUBLIC_KEY;
   const canPay =
     affirmEnabled && ready && mapped.length > 0 && totalC >= MIN_TOTAL_CENTS;
 
@@ -194,7 +332,31 @@ export default function AffirmButton({
       .catch(() => setReady(false));
   }, [PUBLIC_KEY, ENV]);
 
-  async function handleClick() {
+  const buyerValid =
+    buyer.firstName.trim().length > 0 &&
+    buyer.lastName.trim().length > 0 &&
+    isEmail(buyer.email) &&
+    buyer.line1.trim().length > 0 &&
+    buyer.city.trim().length > 0 &&
+    isUSState(buyer.state) &&
+    isUSZip(buyer.zip);
+
+  function buildCustomerFromBuyer(): Customer {
+    return {
+      firstName: buyer.firstName.trim(),
+      lastName: buyer.lastName.trim(),
+      email: buyer.email.trim(),
+      address: {
+        line1: buyer.line1.trim(),
+        city: buyer.city.trim(),
+        state: buyer.state.trim().toUpperCase(),
+        zip: buyer.zip.trim(),
+        country: "US",
+      },
+    };
+  }
+
+  async function startAffirmFlow() {
     const affirm = (window as any).affirm;
 
     if (!affirm?.checkout) {
@@ -221,7 +383,14 @@ export default function AffirmButton({
       return;
     }
 
+    // ✅ Si no hay datos del comprador, pedilos primero
+    if (!buyerValid) {
+      setBuyerModalOpen(true);
+      return;
+    }
+
     const base = window.location.origin.replace("http://", "https://");
+    const customer = buildCustomerFromBuyer();
 
     const checkout = buildAffirmCheckout(
       mapped,
@@ -233,6 +402,7 @@ export default function AffirmButton({
     setOpening(true);
 
     try {
+      console.log("[AFFIRM CHECKOUT PAYLOAD]", checkout);
       affirm.checkout(checkout);
 
       affirm.checkout.open({
@@ -244,7 +414,10 @@ export default function AffirmButton({
               body: JSON.stringify({
                 checkout_token,
                 order_id: "ORDER-" + Date.now(),
+                // ✅ compat: mandamos ambos (por si tu function esperaba "amount")
+                amount: totalC,
                 amount_cents: totalC,
+                currency: "USD",
                 capture: true,
               }),
             });
@@ -288,12 +461,8 @@ export default function AffirmButton({
 
         onValidationError: () => {
           setOpening(false);
-          setModal({
-            open: true,
-            title: "Invalid information",
-            body: "Please check the buyer’s name and address.",
-            retry: false,
-          });
+          // Esto puede pasar si el comprador puso datos inválidos o incompletos
+          setBuyerModalOpen(true);
         },
 
         onClose: () => {
@@ -313,8 +482,6 @@ export default function AffirmButton({
     }
   }
 
-  // ✅ IMPORTANTE: ahora siempre mostramos algo (para que se vea en el drawer)
-  // Si falta key o está deshabilitado, mostramos disabled con explicación.
   const label = !affirmEnabled
     ? "Affirm (disabled)"
     : !ready
@@ -327,7 +494,7 @@ export default function AffirmButton({
     <>
       <button
         type="button"
-        onClick={handleClick}
+        onClick={startAffirmFlow}
         disabled={!affirmEnabled || opening || !canPay}
         className="w-full rounded-xl px-4 py-3 text-xs font-bold uppercase tracking-wide
                    bg-gradient-to-r from-sky-500 to-violet-500
@@ -356,12 +523,34 @@ export default function AffirmButton({
       <NiceModal
         open={modal.open}
         title={modal.title}
-        onClose={() => setModal({ open: false, title: "", body: "", retry: false })}
+        onClose={() =>
+          setModal({ open: false, title: "", body: "", retry: false })
+        }
         secondaryLabel="Close"
         primaryLabel={modal.retry ? "Retry" : undefined}
-        onPrimary={modal.retry ? handleClick : undefined}
+        onPrimary={modal.retry ? startAffirmFlow : undefined}
       >
         {modal.body}
+      </NiceModal>
+
+      <NiceModal
+        open={buyerModalOpen}
+        title="Buyer information"
+        onClose={() => setBuyerModalOpen(false)}
+        primaryLabel="Continue"
+        onPrimary={() => {
+          if (!buyerValid) {
+            showToast("error", "Please complete all required fields correctly.");
+            return;
+          }
+          setBuyerModalOpen(false);
+          // Abrimos Affirm inmediatamente sin pedir otro click
+          startAffirmFlow();
+        }}
+        secondaryLabel="Close"
+        disableClose={opening}
+      >
+        <BuyerInfoForm value={buyer} onChange={setBuyer} />
       </NiceModal>
     </>
   );

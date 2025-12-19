@@ -15,60 +15,24 @@ export type Totals = {
 };
 
 export type Customer = {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  // phone?: string; // opcional, no lo mandamos por defecto
-  address?: {
-    line1?: string;
-    city?: string;
-    state?: string; // "FL"
-    zip?: string; // "33127"
+  firstName: string;
+  lastName: string;
+  email: string;
+  address: {
+    line1: string;
+    city: string;
+    state: string; // "FL"
+    zip: string; // "33127"
     country?: string; // "US"
   };
 };
 
 const toCents = (usd = 0) => Math.round((Number(usd) || 0) * 100);
 
-const isUSState = (v?: string) => !!v && /^[A-Z]{2}$/.test(v.toUpperCase());
-const isUSZip = (v?: string) => !!v && /^\d{5}(-\d{4})?$/.test(v);
-const isCountryUS = (v?: string) => (v || "").toUpperCase() === "US";
-
-function hasFullUSAddress(c?: Customer) {
-  const a = c?.address;
-  if (!a) return false;
-  return (
-    !!a.line1 &&
-    !!a.city &&
-    isUSState(a.state) &&
-    isUSZip(a.zip) &&
-    isCountryUS(a.country || "US")
-  );
-}
-
-function buildName(c?: Customer) {
-  const first = (c?.firstName || "").trim();
-  const last = (c?.lastName || "").trim();
-  if (first || last) return { first: first || "Customer", last: last || "Online" };
-  // Si no hay nombre, lo omitimos y que Affirm lo pida en el modal
-  return null;
-}
-
-function buildAddress(c?: Customer) {
-  const a = c?.address || {};
-  return {
-    line1: String(a.line1 || "").trim(),
-    city: String(a.city || "").trim(),
-    state: String(a.state || "").trim().toUpperCase(),
-    zipcode: String(a.zip || "").trim(),
-    country: String(a.country || "US").trim().toUpperCase(),
-  };
-}
-
 export function buildAffirmCheckout(
   items: CartItem[],
   totals: Totals,
-  customer?: Customer,
+  customer: Customer,
   merchantBase = window.location.origin
 ) {
   const mapped = items.map((p, idx) => ({
@@ -89,6 +53,19 @@ export function buildAffirmCheckout(
   const subtotalC = mapped.reduce((acc, it) => acc + it.unit_price * it.qty, 0);
   const totalC = subtotalC + shippingC + taxC;
 
+  const name = {
+    first: String(customer.firstName || "").trim(),
+    last: String(customer.lastName || "").trim(),
+  };
+
+  const address = {
+    line1: String(customer.address.line1 || "").trim(),
+    city: String(customer.address.city || "").trim(),
+    state: String(customer.address.state || "").trim().toUpperCase(),
+    zipcode: String(customer.address.zip || "").trim(),
+    country: String(customer.address.country || "US").trim().toUpperCase(),
+  };
+
   const payload: any = {
     merchant: {
       user_confirmation_url: merchantBase + "/affirm/confirm.html",
@@ -102,24 +79,18 @@ export function buildAffirmCheckout(
     tax_amount: taxC,
     total: totalC,
     metadata: { mode: "modal" },
+
+    // ✅ Affirm NO falla más por missing_fields
+    billing: {
+      name,
+      address,
+      email: String(customer.email || "").trim(),
+    },
+    shipping: {
+      name,
+      address,
+    },
   };
-
-  // Solo mandamos billing/shipping si el customer tiene dirección REAL completa.
-  // Si no, Affirm lo va a pedir en el modal (mejor que mandar una dirección fake).
-  if (hasFullUSAddress(customer)) {
-    const name = buildName(customer) || { first: "Customer", last: "Online" };
-    const addr = buildAddress(customer);
-
-    payload.billing = { name, address: addr };
-    payload.shipping = { name, address: addr };
-  } else {
-    const name = buildName(customer);
-    if (name) {
-      // Si hay nombre pero no hay address, mandamos nombre solo
-      payload.billing = { name };
-      payload.shipping = { name };
-    }
-  }
 
   return payload;
 }

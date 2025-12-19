@@ -17,11 +17,27 @@ const BASE = isProd
   ? "https://api.affirm.com/api/v2"
   : "https://api.sandbox.affirm.com/api/v2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
+// (Opcional) si querés restringir CORS a tu dominio,
+// seteá ALLOWED_ORIGINS="https://ebabselectronic.com,https://xxx.netlify.app"
+const allowedOriginsEnv = String(process.env.ALLOWED_ORIGINS || "").trim();
+const allowedOrigins = allowedOriginsEnv
+  ? allowedOriginsEnv.split(",").map((s) => s.trim()).filter(Boolean)
+  : null;
+
+function corsHeaders(origin) {
+  const allowOrigin =
+    !allowedOrigins
+      ? "*"
+      : allowedOrigins.includes(origin)
+      ? origin
+      : allowedOrigins[0] || "*";
+
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+}
 
 const CAPTURE_DEFAULT = true;
 
@@ -34,14 +50,16 @@ const safe = (o) => {
   }
 };
 
-// ⬇️ Netlify necesita esta export en ESM
 export async function handler(event) {
+  const origin = event.headers?.origin || "";
+  const CORS = corsHeaders(origin);
+
   // Preflight
   if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: corsHeaders, body: "" };
+    return { statusCode: 200, headers: CORS, body: "" };
   }
   if (event.httpMethod !== "POST") {
-    return { statusCode: 405, headers: corsHeaders, body: "Method Not Allowed" };
+    return { statusCode: 405, headers: CORS, body: "Method Not Allowed" };
   }
 
   try {
@@ -62,25 +80,28 @@ export async function handler(event) {
             process.env.AFFIRM_PRIVATE_API_KEY || process.env.AFFIRM_PRIVATE_KEY
           ),
           HAS_VITE_AFFIRM_PUBLIC_KEY: Boolean(process.env.VITE_AFFIRM_PUBLIC_KEY),
+          HAS_ALLOWED_ORIGINS: Boolean(allowedOriginsEnv),
         },
       };
-      return json(200, { ok: true, diag });
+      return json(200, { ok: true, diag }, CORS);
     }
 
     const {
       checkout_token,
       order_id,
-      amount_cents, // total en centavos (entero)
-      shipping_carrier, // opcional
-      shipping_confirmation, // opcional
-      capture, // override true/false
+      amount_cents,
+      amount, // ✅ compat: algunos callers mandan amount
+      currency,
+      shipping_carrier,
+      shipping_confirmation,
+      capture,
     } = body || {};
 
     if (typeof checkout_token !== "string" || !checkout_token.trim()) {
-      return json(400, { error: "Missing checkout_token" });
+      return json(400, { error: "Missing checkout_token" }, CORS);
     }
     if (typeof order_id !== "string" || !order_id.trim()) {
-      return json(400, { error: "Missing order_id" });
+      return json(400, { error: "Missing order_id" }, CORS);
     }
 
     // Llaves (dos variantes por si cambian los nombres en Netlify)
@@ -90,9 +111,11 @@ export async function handler(event) {
       process.env.AFFIRM_PRIVATE_API_KEY || process.env.AFFIRM_PRIVATE_KEY || "";
 
     if (!PUB || !PRIV) {
-      return json(500, {
-        error: "Missing AFFIRM keys (AFFIRM_PUBLIC_KEY / AFFIRM_PRIVATE_KEY)",
-      });
+      return json(
+        500,
+        { error: "Missing AFFIRM keys (AFFIRM_PUBLIC_KEY / AFFIRM_PRIVATE_KEY)" },
+        CORS
+      );
     }
 
     // Auth correcto: usuario = PUBLIC, password = PRIVATE
@@ -102,7 +125,7 @@ export async function handler(event) {
     const authRes = await fetch(`${BASE}/charges`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: AUTH },
-      body: JSON.stringify({ checkout_token }),
+      body: JSON.stringify({ checkout_token: checkout_token.trim() }),
     });
 
     const charge = await tryJson(authRes);
@@ -113,7 +136,7 @@ export async function handler(event) {
     });
 
     if (!authRes.ok) {
-      return json(authRes.status, { step: "charges", error: charge });
+      return json(authRes.status, { step: "charges", error: charge }, CORS);
     }
 
     // 2) Capturar si corresponde
@@ -123,15 +146,28 @@ export async function handler(event) {
     let captureResp = null;
 
     if (shouldCapture) {
-      if (typeof amount_cents !== "number" || !Number.isFinite(amount_cents)) {
-        return json(400, {
-          error: "amount_cents required (number) for capture=true",
-        });
+      // ✅ acepta amount_cents o amount
+      const rawAmt =
+        typeof amount_cents === "number" ? amount_cents : amount;
+
+      if (typeof rawAmt !== "number" || !Number.isFinite(rawAmt)) {
+        return json(
+          400,
+          {
+            error:
+              "amount_cents (number) or amount (number) required for capture=true",
+          },
+          CORS
+        );
       }
-      const amt = Math.round(amount_cents);
+
+      const amt = Math.round(rawAmt);
       if (amt <= 0) {
-        return json(400, { error: "amount_cents must be > 0" });
+        return json(400, { error: "amount must be > 0" }, CORS);
       }
+
+      // Currency: opcional, pero logueamos si viene
+      const cur = typeof currency === "string" ? currency.trim().toUpperCase() : "USD";
 
       const capRes = await fetch(
         `${BASE}/charges/${encodeURIComponent(charge.id)}/capture`,
@@ -141,6 +177,7 @@ export async function handler(event) {
           body: JSON.stringify({
             order_id: order_id.trim(),
             amount: amt, // centavos
+            currency: cur, // no siempre es requerido; si Affirm lo ignora, ok
             shipping_carrier,
             shipping_confirmation,
           }),
@@ -154,14 +191,18 @@ export async function handler(event) {
       });
 
       if (!capRes.ok) {
-        return json(capRes.status, { step: "capture", error: captureResp });
+        return json(
+          capRes.status,
+          { step: "capture", error: captureResp },
+          CORS
+        );
       }
     }
 
-    return json(200, { ok: true, charge, capture: captureResp });
+    return json(200, { ok: true, charge, capture: captureResp }, CORS);
   } catch (e) {
     console.error("[affirm-authorize] error", e);
-    return json(500, { error: "server_error" });
+    return json(500, { error: "server_error" }, CORS);
   }
 }
 
@@ -174,10 +215,10 @@ async function tryJson(res) {
     return { raw: text };
   }
 }
-function json(statusCode, obj) {
+function json(statusCode, obj, cors) {
   return {
     statusCode,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...(cors || {}), "Content-Type": "application/json" },
     body: JSON.stringify(obj),
   };
 }

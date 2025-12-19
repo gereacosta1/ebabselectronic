@@ -12,10 +12,8 @@ export default function PayWithAffirm() {
     qty: Number(it.qty) || 1,
     url: (it as any).url || window.location.pathname,
     image: (it as any).image,
+    id: (it as any).id ?? it.id ?? idx + 1,
   }));
-
-  // Si ya tenés datos del comprador, podes pasarlos acá:
-  const customer = undefined; // o { firstName, lastName, email, phone, address: { ... } }
 
   return (
     <AffirmButton
@@ -23,7 +21,6 @@ export default function PayWithAffirm() {
       totalUSD={Number(totalUSD) || 0}
       shippingUSD={0}
       taxUSD={0}
-      customer={customer}
     />
   );
 }
