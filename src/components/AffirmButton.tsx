@@ -1,6 +1,6 @@
 // src/components/AffirmButton.tsx
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { loadAffirm, AFFIRM_ENABLED } from "../lib/affirm";
+import { loadAffirm } from "../lib/affirm";
 import {
   buildAffirmCheckout,
   type CartItem as Item,
@@ -179,7 +179,7 @@ export default function AffirmButton({
       : subtotalC + shippingC + taxC;
 
   // ✅ condiciones de pago
-  const affirmEnabled = AFFIRM_ENABLED && !!PUBLIC_KEY;
+  const affirmEnabled = !!PUBLIC_KEY;;
   const canPay =
     affirmEnabled && ready && mapped.length > 0 && totalC >= MIN_TOTAL_CENTS;
 
