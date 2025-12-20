@@ -190,8 +190,53 @@ const Catalog: React.FC<CatalogProps> = ({ onViewDetails }) => {
       features: ["Motor eléctrico", "Plegable", "Freno regenerativo"],
     },
 
+    // ---------- E-BIKES ----------
+{
+  id: 25,
+  name: "E bike xp4 $2500",
+  brand: "E-Bike",
+  model: "XP4",
+  year: 2025,
+  price: 2500,
+  image: "/IMG/E bike xp4 $2500.jpeg",
+  condition: "Nueva",
+  engine: "Electric",
+  featured: true,
+  description: "E-bike estilo urbano, ideal para movilidad diaria.",
+  features: ["Motor eléctrico", "Batería de alta capacidad", "Diseño compacto"],
+},
+{
+  id: 26,
+  name: "E bike rambo 2850",
+  brand: "E-Bike",
+  model: "Rambo",
+  year: 2025,
+  price: 2850,
+  image: "/IMG/E bike rambo 2850.jpeg",
+  condition: "Nueva",
+  engine: "Electric",
+  description: "E-bike con ruedas anchas y estructura robusta.",
+  features: ["Motor eléctrico", "Suspensión confortable", "Autonomía extendida"],
+},
+{
+  id: 27,
+  name: "E bike súper 73 $3500",
+  brand: "E-Bike",
+  model: "Super 73",
+  year: 2025,
+  price: 3500,
+  image: "/IMG/E bike súper 73 $3500.jpeg",
+  condition: "Nueva",
+  engine: "Electric",
+  featured: true,
+  description: "E-bike estilo scrambler, potente y cómoda.",
+  features: ["Motor eléctrico de alta potencia", "Batería de alta capacidad", "Diseño robusto"],
+},
+
+
     // ---------- PARLANTES JBL ----------
-    {
+   
+     {
       id: 21,
       name: "JBL Charge 4",
       brand: "JBL",

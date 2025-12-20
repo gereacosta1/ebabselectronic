@@ -60,9 +60,10 @@ export async function handler(event) {
 
     const line_items = items.map((it, index) => {
       const name = (it.name || `Item ${index + 1}`).toString().slice(0, 120);
+
       const unitAmount = Math.round(Number(it.price || 0) * 100);
       const safeUnitAmount =
-        Number.isFinite(unitAmount) && unitAmount >= 50 ? unitAmount : 50; // min seguro
+        Number.isFinite(unitAmount) && unitAmount >= 50 ? unitAmount : 50; // mínimo 50 cents por seguridad
 
       const qty = Math.max(1, Number(it.qty) || 1);
 
@@ -76,15 +77,14 @@ export async function handler(event) {
       };
     });
 
-    // ✅ Lo más estable: automatic_payment_methods
-    // Stripe decide qué mostrar (card + BNPL elegibles: Klarna/Afterpay/etc.)
+    // ✅ Checkout Session: usá payment_method_types (NO automatic_payment_methods)
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items,
 
-      automatic_payment_methods: { enabled: true },
+      // Solo tarjeta (Affirm va por su botón/flujo aparte)
+      payment_method_types: ["card"],
 
-      // Aumenta elegibilidad BNPL (especialmente Afterpay/Klarna)
       billing_address_collection: "required",
       shipping_address_collection: { allowed_countries: ["US"] },
       phone_number_collection: { enabled: true },

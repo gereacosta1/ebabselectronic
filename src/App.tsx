@@ -1,3 +1,4 @@
+// App.tsx
 import React, { useState } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -21,7 +22,7 @@ export interface Motorcycle {
   price: number;
   image: string;
   condition: 'Nueva' | 'Usada';
-  engine: string;
+  engine?: string;
   mileage?: number;
   featured?: boolean;
   description?: string;
