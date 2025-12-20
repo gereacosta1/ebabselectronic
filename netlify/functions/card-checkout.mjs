@@ -82,8 +82,9 @@ export async function handler(event) {
       mode: "payment",
       line_items,
 
-      // Solo tarjeta (Affirm va por su botón/flujo aparte)
-      payment_method_types: ["card"],
+      // Card + BNPL (Klarna + Afterpay/Clearpay)
+payment_method_types: ["card", "klarna", "afterpay_clearpay"],
+
 
       billing_address_collection: "required",
       shipping_address_collection: { allowed_countries: ["US"] },
