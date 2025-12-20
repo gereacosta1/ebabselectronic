@@ -58,7 +58,7 @@ const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
                        flex items-center justify-center px-4 py-4 md:px-6 md:py-6"
           >
             <img
-              src="/IMG/scooter-ebabs.webp"
+              src="/IMG/scooter-electrico-hiboy.jpg"
               alt="EBABS Electric Scooter in the showroom"
               className="w-full max-h-[420px] object-contain drop-shadow-2xl"
             />
