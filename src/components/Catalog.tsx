@@ -193,7 +193,7 @@ const Catalog: React.FC<CatalogProps> = ({ onViewDetails }) => {
     // ---------- E-BIKES ----------
 {
   id: 25,
-  name: "E bike xp4 $2500",
+  name: "E bike xp4",
   brand: "E-Bike",
   model: "XP4",
   year: 2025,
@@ -207,7 +207,7 @@ const Catalog: React.FC<CatalogProps> = ({ onViewDetails }) => {
 },
 {
   id: 26,
-  name: "E bike rambo 2850",
+  name: "E bike rambo",
   brand: "E-Bike",
   model: "Rambo",
   year: 2025,
@@ -220,7 +220,7 @@ const Catalog: React.FC<CatalogProps> = ({ onViewDetails }) => {
 },
 {
   id: 27,
-  name: "E bike súper 73 $3500",
+  name: "E bike súper 73",
   brand: "E-Bike",
   model: "Super 73",
   year: 2025,
