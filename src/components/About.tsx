@@ -284,7 +284,7 @@ const About: React.FC = () => {
               <div className="relative min-h-[220px] md:min-h-[300px] lg:min-h-[360px] flex items-center">
                 <div className="w-full h-full rounded-3xl overflow-hidden border border-purple-200 bg-black/20 shadow-2xl flex items-center justify-center">
                   <img
-                    src="/IMG/nextdrive-building.jpeg"
+                    src="/IMG/IMG-TIENDA2.jpeg"
                     alt={t("about.location.imageAlt")}
                     className="w-full h-full object-contain"
                     loading="lazy"
