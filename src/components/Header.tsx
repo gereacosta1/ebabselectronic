@@ -1,8 +1,8 @@
-// src/components/Header.tsx
-import React, { useState } from 'react';
-import { Menu, X, Phone, ShoppingCart } from 'lucide-react';
-import { useCart } from '../context/CartContext';
-import LangToggle from './LangToggle';
+import React, { useMemo, useState } from "react";
+import { Menu, X, Phone, ShoppingCart } from "lucide-react";
+import { useCart } from "../context/CartContext";
+import LangToggle from "./LangToggle";
+import { useI18n } from "../i18n/I18nProvider";
 
 interface HeaderProps {
   activeSection: string;
@@ -12,14 +12,19 @@ interface HeaderProps {
 export default function Header({ activeSection, onNavigate }: HeaderProps) {
   const [openMenu, setOpenMenu] = useState(false);
   const { items, open } = useCart();
+  const { t } = useI18n();
+
   const cartCount = items.reduce((n, i) => n + i.qty, 0);
 
-  const menu = [
-    { id: 'inicio', label: 'Home' },
-    { id: 'catalogo', label: 'Catalog' },
-    { id: 'nosotros', label: 'About' },
-    { id: 'contacto', label: 'Contact' },
-  ];
+  const menu = useMemo(
+    () => [
+      { id: "inicio", label: t("nav.home") },
+      { id: "catalogo", label: t("nav.catalog") },
+      { id: "nosotros", label: t("nav.about") },
+      { id: "contacto", label: t("nav.contact") },
+    ],
+    [t]
+  );
 
   const handleNavigate = (section: string) => {
     onNavigate(section);
@@ -32,8 +37,11 @@ export default function Header({ activeSection, onNavigate }: HeaderProps) {
         <div className="py-4 flex justify-between items-center">
           {/* Logo */}
           <button
-            onClick={() => handleNavigate('inicio')}
+            onClick={() => handleNavigate("inicio")}
             className="flex items-center gap-3 group"
+            aria-label={t("nav.home")}
+            title={t("nav.home")}
+            type="button"
           >
             <div className="relative">
               <img
@@ -45,7 +53,7 @@ export default function Header({ activeSection, onNavigate }: HeaderProps) {
             </div>
 
             <span className="font-black text-xl md:text-2xl text-gray-900 tracking-tight">
-              <span className="text-gray-900">EBABS</span>{' '}
+              <span className="text-gray-900">EBABS</span>{" "}
               <span className="text-purple-700">ELECTRONIC</span>
             </span>
           </button>
@@ -56,6 +64,7 @@ export default function Header({ activeSection, onNavigate }: HeaderProps) {
               <button
                 key={m.id}
                 onClick={() => handleNavigate(m.id)}
+                type="button"
                 className={`
                   relative text-sm md:text-base font-semibold tracking-wide pb-1
                   transition-all duration-200
@@ -64,10 +73,11 @@ export default function Header({ activeSection, onNavigate }: HeaderProps) {
                   after:w-0 after:opacity-0 after:transition-all after:duration-300
                   ${
                     activeSection === m.id
-                      ? 'text-purple-700 after:w-full after:opacity-100'
-                      : 'text-gray-700 hover:text-purple-700 hover:after:w-full hover:after:opacity-100'
+                      ? "text-purple-700 after:w-full after:opacity-100"
+                      : "text-gray-700 hover:text-purple-700 hover:after:w-full hover:after:opacity-100"
                   }
                 `}
+                aria-current={activeSection === m.id ? "page" : undefined}
               >
                 {m.label}
               </button>
@@ -84,7 +94,10 @@ export default function Header({ activeSection, onNavigate }: HeaderProps) {
             {/* Carrito */}
             <button
               onClick={open}
+              type="button"
               className="relative flex items-center justify-center w-10 h-10 rounded-full border border-purple-100 bg-white shadow-sm hover:bg-purple-50 transition-colors"
+              aria-label={t("nav.cart")}
+              title={t("nav.cart")}
             >
               <ShoppingCart className="text-purple-700 w-5 h-5" />
               {cartCount > 0 && (
@@ -100,7 +113,10 @@ export default function Header({ activeSection, onNavigate }: HeaderProps) {
           {/* Mobile toggle */}
           <button
             onClick={() => setOpenMenu((v) => !v)}
+            type="button"
             className="md:hidden inline-flex items-center justify-center rounded-full border border-purple-100/70 p-2 text-gray-800 shadow-sm bg-white/80"
+            aria-label={openMenu ? "Close menu" : "Open menu"}
+            title={openMenu ? "Close menu" : "Open menu"}
           >
             {openMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -118,10 +134,11 @@ export default function Header({ activeSection, onNavigate }: HeaderProps) {
               <button
                 key={m.id}
                 onClick={() => handleNavigate(m.id)}
-                className={`block w-full text-left py-2 text-base font-semibold rounded-lg px-1 transition-colors ${
+                type="button"
+                className={`block w-full text-left py-2 text-base font-semibold rounded-lg px-2 transition-colors ${
                   activeSection === m.id
-                    ? 'text-purple-700 bg-purple-50'
-                    : 'text-gray-700 hover:text-purple-700 hover:bg-purple-50/70'
+                    ? "text-purple-700 bg-purple-50"
+                    : "text-gray-700 hover:text-purple-700 hover:bg-purple-50/70"
                 }`}
               >
                 {m.label}
@@ -131,10 +148,13 @@ export default function Header({ activeSection, onNavigate }: HeaderProps) {
             <div className="flex items-center justify-between pt-3 border-t border-purple-100 mt-2">
               <button
                 onClick={open}
+                type="button"
                 className="relative inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-purple-100 bg-purple-50 text-sm font-semibold text-purple-800"
+                aria-label={t("nav.cart")}
+                title={t("nav.cart")}
               >
                 <ShoppingCart className="w-4 h-4" />
-                <span>Cart</span>
+                <span>{t("nav.cart")}</span>
                 {cartCount > 0 && (
                   <span className="ml-1 bg-fuchsia-400 text-black px-1.5 rounded-full text-[10px] font-bold">
                     {cartCount}
@@ -144,9 +164,7 @@ export default function Header({ activeSection, onNavigate }: HeaderProps) {
 
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-purple-700" />
-                <span className="text-xs font-semibold text-gray-800">
-                  (786) 968 1621
-                </span>
+                <span className="text-xs font-semibold text-gray-800">(786) 968 1621</span>
                 <LangToggle />
               </div>
             </div>

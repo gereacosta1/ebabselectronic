@@ -1,17 +1,16 @@
-// App.tsx
-import React, { useState } from 'react';
-import Header from './components/Header';
-import Hero from './components/Hero';
-import Catalog from './components/Catalog';
-import About from './components/About';
-import Contact from './components/Contact';
-import Footer from './components/Footer';
-import MotorcycleModal from './components/MotorcycleModal';
-import { I18nProvider } from './i18n/I18nProvider';
+import React, { useState } from "react";
+import Header from "./components/Header";
+import Hero from "./components/Hero";
+import Catalog from "./components/Catalog";
+import About from "./components/About";
+import Contact from "./components/Contact";
+import Footer from "./components/Footer";
+import MotorcycleModal from "./components/MotorcycleModal";
+import { I18nProvider, useI18n } from "./i18n/I18nProvider";
 
-import { CartProvider, useCart } from './context/CartContext';
-import CartDrawer from './components/CartDrawer';
-import { ShoppingCart } from 'lucide-react';
+import { CartProvider, useCart } from "./context/CartContext";
+import CartDrawer from "./components/CartDrawer";
+import { ShoppingCart } from "lucide-react";
 
 export interface Motorcycle {
   id: number;
@@ -21,7 +20,7 @@ export interface Motorcycle {
   year: number;
   price: number;
   image: string;
-  condition: 'Nueva' | 'Usada';
+  condition: "Nueva" | "Usada";
   engine?: string;
   mileage?: number;
   featured?: boolean;
@@ -48,24 +47,36 @@ function CartFab() {
 }
 
 function AppInner() {
-  const [activeSection, setActiveSection] = useState('inicio');
+  const [activeSection, setActiveSection] = useState("inicio");
   const [selectedMotorcycle, setSelectedMotorcycle] = useState<Motorcycle | null>(null);
+
+  const { lang } = useI18n();
 
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
+
     const el = document.getElementById(sectionId);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    if (!el) return;
+
+    const headerOffset = 96; // ajustable (altura del header + margen)
+    const top = el.getBoundingClientRect().top + window.scrollY - headerOffset;
+
+    window.scrollTo({ top, behavior: "smooth" });
   };
 
-  const handlePhoneCall = () => window.open('tel:+17869681621', '_self');
+  const handlePhoneCall = () => window.open("tel:+17869681621", "_self");
 
   const handleWhatsApp = () => {
-    const message = encodeURIComponent("Hi! I'm interested in your electric vehicles.");
-    window.open(`https://wa.me/+17869681621?text=${message}`, '_blank');
+    const message =
+      lang === "es"
+        ? "Hola! Estoy interesado en sus scooters, e-bikes y productos eléctricos. ¿Me pueden dar más info?"
+        : "Hi! I'm interested in your scooters, e-bikes and electric products. Can you share more info?";
+
+    window.open(`https://wa.me/+17869681621?text=${encodeURIComponent(message)}`, "_blank");
   };
 
   const handleEmail = () => {
-    window.open('mailto:ebabselectronic@gmail.com', '_self');
+    window.open("mailto:ebabselectronic@gmail.com", "_self");
   };
 
   return (

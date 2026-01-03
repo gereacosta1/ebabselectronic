@@ -1,4 +1,3 @@
-// src/components/LangToggle.tsx
 import React from "react";
 import { useI18n } from "../i18n/I18nProvider";
 
@@ -14,10 +13,15 @@ export default function LangToggle() {
     <button
       onClick={toggle}
       aria-label="Change language"
-      className="px-3 py-1 rounded-md border border-white/20 text-white hover:bg-white/10"
+      className="
+        px-3 py-1 rounded-md
+        border border-purple-200 bg-purple-50
+        text-purple-800 font-extrabold
+        hover:bg-purple-100 hover:border-purple-300
+        transition-colors
+      "
       title={lang === "es" ? "Switch to English" : "Cambiar a Español"}
     >
-      {/* Muestra hacia qué cambiaría */}
       {lang === "es" ? "EN" : "ES"}
     </button>
   );

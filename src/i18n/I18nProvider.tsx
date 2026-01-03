@@ -1,3 +1,4 @@
+// src/i18n/I18nProvider.tsx
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import es from "./dict.es";
 import en from "./dict.en";
