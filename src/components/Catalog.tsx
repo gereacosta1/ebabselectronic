@@ -12,7 +12,7 @@ interface CatalogProps {
   onViewDetails: (motorcycle: Motorcycle) => void;
 }
 
-/** Toast simple para reemplazar alert() de "Ver más motos" */
+/** Toast simple para reemplazar alert() de "Ver más" */
 function SimpleToast({
   show,
   text,
@@ -49,6 +49,7 @@ const Btn: React.FC<BtnProps> = ({
     "w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-extrabold " +
     "transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 " +
     "focus:ring-black-500 disabled:opacity-60 disabled:cursor-not-allowed";
+
   const variants = {
     primary:
       "bg-purple-600 text-white hover:bg-purple-700 shadow-lg hover:shadow-black/40 active:scale-[.98]",
@@ -65,8 +66,16 @@ const Btn: React.FC<BtnProps> = ({
   );
 };
 
-/** 🔁 Mapeo: texto ES del array -> clave i18n */
+/**
+ * 🔁 Mapeo: texto ES del array -> clave i18n genérica.
+ * Esto sirve como fallback cuando NO existe:
+ *   product.{id}.feature.{idx}
+ *
+ * Tip: podés ir agregando más claves "feature.*" en los diccionarios
+ * para que EN quede bien sin tocar la data.
+ */
 const FEATURE_KEY_BY_ES: Record<string, string> = {
+  // movilidad eléctrica (genéricas)
   "Motor eléctrico": "feature.motor",
   "Ligero y ágil": "feature.lightAgile",
   "Batería de alta capacidad": "feature.batteryHigh",
@@ -74,6 +83,25 @@ const FEATURE_KEY_BY_ES: Record<string, string> = {
   "Pantalla táctil": "feature.touchscreen",
   "Conectividad Bluetooth": "feature.bluetooth",
   "Sistema de navegación GPS": "feature.gps",
+
+  // extras que aparecen en tu data actual
+  "Suspensión confortable": "feature.comfortSuspension",
+  "Autonomía extendida": "feature.extendedRange",
+  "Diseño compacto": "feature.compactDesign",
+  "Batería removible": "feature.removableBattery",
+  "Plegable": "feature.foldable",
+  "Freno regenerativo": "feature.regenBrake",
+
+  // audio / parlantes
+  Bluetooth: "feature.bluetooth",
+  "Resistente al agua": "feature.waterResistant",
+  "Batería recargable": "feature.rechargeableBattery",
+  "Tamaño compacto": "feature.compactSize",
+  "Hasta 8h de batería": "feature.battery8h",
+  "Alta potencia": "feature.highPower",
+  "Luces LED": "feature.ledLights",
+  "Entradas para micrófono": "feature.micInput",
+  "Diseño portátil": "feature.portableDesign",
 };
 
 /** ✅ Traducción robusta de features */
@@ -83,29 +111,34 @@ const translateFeature = (
   featureTextES: string,
   idx: number
 ) => {
+  const clean = (featureTextES ?? "").trim();
+
+  // 1) Primero: por producto e índice (si existe en el dict)
   const keyById = `product.${productId}.feature.${idx}`;
   const v1 = t(keyById);
   if (v1 !== keyById) return v1;
 
-  const genericKey = FEATURE_KEY_BY_ES[featureTextES];
+  // 2) Fallback: clave genérica por texto ES
+  const genericKey = FEATURE_KEY_BY_ES[clean];
   if (genericKey) {
     const v2 = t(genericKey);
     if (v2 !== genericKey) return v2;
   }
 
-  return featureTextES;
+  // 3) Último fallback: devolver el texto original
+  return clean;
 };
 
 const Catalog: React.FC<CatalogProps> = ({ onViewDetails }) => {
   const { t, fmtMoney } = useI18n();
 
-  // 👇 hooks del componente
   const [filter, setFilter] = useState<"all" | "nueva">("all");
   const [favorites, setFavorites] = useState<number[]>([]);
   const [toast, setToast] = useState<{ show: boolean; text: string }>({
     show: false,
     text: "",
   });
+
   const showToast = (text: string, ms = 2500) => {
     setToast({ show: true, text });
     window.setTimeout(() => setToast({ show: false, text: "" }), ms);
@@ -114,7 +147,10 @@ const Catalog: React.FC<CatalogProps> = ({ onViewDetails }) => {
   // 👉 carrito
   const { addItem, open } = useCart();
 
-  // ⚡ Solo 5 scooters eléctricos + parlantes JBL
+  /**
+   * Data del catálogo (EBABS: movilidad eléctrica + electrónica).
+   * Mantengo tu tipo Motorcycle por compatibilidad.
+   */
   const motorcycles: Motorcycle[] = [
     // ---------- SCOOTERS ELÉCTRICOS ----------
     {
@@ -191,52 +227,54 @@ const Catalog: React.FC<CatalogProps> = ({ onViewDetails }) => {
     },
 
     // ---------- E-BIKES ----------
-{
-  id: 25,
-  name: "E bike xp4",
-  brand: "E-Bike",
-  model: "XP4",
-  year: 2025,
-  price: 2500,
-  image: "/IMG/e-bike-xp4-2500.jpeg",
-  condition: "Nueva",
-  engine: "Electric",
-  featured: true,
-  description: "E-bike estilo urbano, ideal para movilidad diaria.",
-  features: ["Motor eléctrico", "Batería de alta capacidad", "Diseño compacto"],
-},
-{
-  id: 26,
-  name: "E bike rambo",
-  brand: "E-Bike",
-  model: "Rambo",
-  year: 2025,
-  price: 2850,
-  image: "/IMG/e-bike-rambo-2850.jpeg",
-  condition: "Nueva",
-  engine: "Electric",
-  description: "E-bike con ruedas anchas y estructura robusta.",
-  features: ["Motor eléctrico", "Suspensión confortable", "Autonomía extendida"],
-},
-{
-  id: 27,
-  name: "E bike súper 73",
-  brand: "E-Bike",
-  model: "Super 73",
-  year: 2025,
-  price: 3500,
-  image: "/IMG/e-bike-super73-3500.jpeg",
-  condition: "Nueva",
-  engine: "Electric",
-  featured: true,
-  description: "E-bike estilo scrambler, potente y cómoda.",
-  features: ["Motor eléctrico de alta potencia", "Batería de alta capacidad", "Diseño robusto"],
-},
-
+    {
+      id: 25,
+      name: "E bike xp4",
+      brand: "E-Bike",
+      model: "XP4",
+      year: 2025,
+      price: 2500,
+      image: "/IMG/e-bike-xp4-2500.jpeg",
+      condition: "Nueva",
+      engine: "Electric",
+      featured: true,
+      description: "E-bike estilo urbano, ideal para movilidad diaria.",
+      features: ["Motor eléctrico", "Batería de alta capacidad", "Diseño compacto"],
+    },
+    {
+      id: 26,
+      name: "E bike rambo",
+      brand: "E-Bike",
+      model: "Rambo",
+      year: 2025,
+      price: 2850,
+      image: "/IMG/e-bike-rambo-2850.jpeg",
+      condition: "Nueva",
+      engine: "Electric",
+      description: "E-bike con ruedas anchas y estructura robusta.",
+      features: ["Motor eléctrico", "Suspensión confortable", "Autonomía extendida"],
+    },
+    {
+      id: 27,
+      name: "E bike súper 73",
+      brand: "E-Bike",
+      model: "Super 73",
+      year: 2025,
+      price: 3500,
+      image: "/IMG/e-bike-super73-3500.jpeg",
+      condition: "Nueva",
+      engine: "Electric",
+      featured: true,
+      description: "E-bike estilo scrambler, potente y cómoda.",
+      features: [
+        "Motor eléctrico de alta potencia",
+        "Batería de alta capacidad",
+        "Diseño robusto",
+      ],
+    },
 
     // ---------- PARLANTES JBL ----------
-   
-     {
+    {
       id: 21,
       name: "JBL Charge 4",
       brand: "JBL",
@@ -292,7 +330,7 @@ const Catalog: React.FC<CatalogProps> = ({ onViewDetails }) => {
     },
   ];
 
-  // Mostrar solo eléctricos o productos sin motor (parlantes JBL)
+  // Mostrar solo eléctricos o productos sin motor (parlantes)
   const onlyElectricOrNoEngine = motorcycles.filter(
     (m) => (m.engine && m.engine.toLowerCase() === "electric") || !m.engine
   );
@@ -408,12 +446,8 @@ const Catalog: React.FC<CatalogProps> = ({ onViewDetails }) => {
                     >
                       <Heart
                         className="w-5 h-5"
-                        color={
-                          favorites.includes(moto.id) ? "#f97316" : "#ffffff"
-                        }
-                        fill={
-                          favorites.includes(moto.id) ? "#f97316" : "none"
-                        }
+                        color={favorites.includes(moto.id) ? "#f97316" : "#ffffff"}
+                        fill={favorites.includes(moto.id) ? "#f97316" : "none"}
                       />
                     </button>
                   </div>
@@ -440,14 +474,14 @@ const Catalog: React.FC<CatalogProps> = ({ onViewDetails }) => {
                       <Calendar className="w-4 h-4" />
                       <span className="text-lg font-bold">{moto.year}</span>
                     </div>
+
                     {moto.engine && (
                       <div className="flex items-center space-x-2 text-white">
                         <Fuel className="w-4 h-4" />
-                        <span className="text-sm font-semibold">
-                          {moto.engine}
-                        </span>
+                        <span className="text-sm font-semibold">{moto.engine}</span>
                       </div>
                     )}
+
                     {moto.mileage && (
                       <div className="flex items-center space-x-2 text-white col-span-2">
                         <Gauge className="w-4 h-4" />
@@ -501,6 +535,7 @@ const Catalog: React.FC<CatalogProps> = ({ onViewDetails }) => {
                       onClick={() => {
                         const priceNum = Number(moto.price);
                         if (!Number.isFinite(priceNum) || priceNum <= 0) return;
+
                         addItem({
                           id: String(moto.id),
                           name: moto.name,
@@ -526,6 +561,7 @@ const Catalog: React.FC<CatalogProps> = ({ onViewDetails }) => {
                         const priceNum = Number(moto.price);
                         const isPriceValid =
                           Number.isFinite(priceNum) && priceNum > 0;
+
                         if (!isPriceValid) {
                           return (
                             <button
@@ -537,6 +573,7 @@ const Catalog: React.FC<CatalogProps> = ({ onViewDetails }) => {
                             </button>
                           );
                         }
+
                         return (
                           <AffirmButton
                             cartItems={[
