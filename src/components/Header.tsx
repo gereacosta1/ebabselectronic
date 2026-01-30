@@ -1,3 +1,4 @@
+// src/components/Header.tsx
 import React, { useMemo, useState } from "react";
 import { Menu, X, Phone, ShoppingCart } from "lucide-react";
 import { useCart } from "../context/CartContext";
