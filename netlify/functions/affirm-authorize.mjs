@@ -130,7 +130,8 @@ export async function handler(event) {
       );
     }
 
-    // ---------- DIAG REMOTO ----------
+    
+       // ---------- DIAG REMOTO ----------
     if (body && body.diag === "remote") {
       const secret = process.env.DIAG_SECRET;
       if (secret) {
@@ -143,52 +144,54 @@ export async function handler(event) {
       if (!PUB || !PRIV) {
         return json(
           500,
-          {
-            ok: false,
-            error: "Missing AFFIRM keys (AFFIRM_PUBLIC_KEY / AFFIRM_PRIVATE_KEY)",
-          },
+          { ok: false, error: "Missing AFFIRM keys (AFFIRM_PUBLIC_KEY / AFFIRM_PRIVATE_KEY)" },
           cors
         );
       }
 
       const AUTH = "Basic " + Buffer.from(`${PUB}:${PRIV}`).toString("base64");
 
-      const testRes = await fetch(`${BASE}/charges`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: AUTH },
-        body: JSON.stringify({ checkout_token: "FAKE_TEST_TOKEN_DO_NOT_USE" }),
-      });
+      try {
+        const testRes = await fetch(`${BASE}/charges`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: AUTH },
+          body: JSON.stringify({ checkout_token: "FAKE_TEST_TOKEN_DO_NOT_USE" }),
+        });
 
-      const testBody = await tryJson(testRes);
-      const status = testRes.status;
+        const testBody = await tryJson(testRes);
+        const status = testRes.status;
 
-      // PASS = 400/422 (token inválido => auth OK)
-      // FAIL = 401/403 (auth mal) / 5xx (upstream)
-      const pass = status === 400 || status === 422;
+        // PASS = 400/422 (token inválido => auth OK)
+        // FAIL = 401/403 (auth mal) / 5xx (upstream)
+        const pass = status === 400 || status === 422;
 
-      console.log("[affirm remote diag]", {
-        env: "prod",
-        base: BASE,
-        status,
-        pass,
-        body: safe(testBody),
-      });
-
-      return json(
-        200,
-        {
-          ok: true,
-          remote: {
-            env: "prod",
-            baseURL: BASE,
-            status,
-            pass,
-            body: testBody,
+        return json(
+          200,
+          {
+            ok: true,
+            remote: { env: "prod", baseURL: BASE, status, pass, body: testBody },
           },
-        },
-        cors
-      );
+          cors
+        );
+      } catch (e) {
+        const msg = String(e?.message || e);
+        return json(
+          200,
+          {
+            ok: true,
+            remote: {
+              env: "prod",
+              baseURL: BASE,
+              status: "fetch_failed",
+              pass: false,
+              error: msg,
+            },
+          },
+          cors
+        );
+      }
     }
+
 
     // ---------- FLUJO REAL ----------
     const {
@@ -285,7 +288,20 @@ export async function handler(event) {
 
     return json(200, { ok: true, charge, capture: captureResp }, cors);
   } catch (e) {
-    console.error("[affirm-authorize] error", e);
-    return json(500, { ok: false, error: "server_error" }, cors);
+    const msg = String(e?.message || e);
+    const stack = String(e?.stack || "");
+    console.error("[affirm-authorize] error", msg, stack);
+
+    return json(
+      500,
+      {
+        ok: false,
+        error: "server_error",
+        message: msg,
+        // stack recortado para que no sea eterno
+        stack: stack ? stack.slice(0, 2000) : undefined,
+      },
+      cors
+    );
   }
 }
