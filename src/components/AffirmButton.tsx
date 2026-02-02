@@ -408,7 +408,7 @@ export default function AffirmButton({
       affirm.checkout.open({
         onSuccess: async ({ checkout_token }: { checkout_token: string }) => {
           try {
-            const r = await fetch("/api/affirm-authorize", {
+            const r = await fetch("/.netlify/functions/affirm-authorize", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
