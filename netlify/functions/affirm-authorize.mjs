@@ -99,7 +99,16 @@ export async function handler(event) {
   }
 
   try {
-    const body = JSON.parse(event.body || "{}");
+    let body = {};
+try {
+  body = event.body ? JSON.parse(event.body) : {};
+} catch (e) {
+  // fallback: permitir diag por querystring para debug
+  body = {};
+}
+const qs = event.queryStringParameters || {};
+if (!body.diag && qs.diag) body.diag = qs.diag;
+
 
     const PUB =
       process.env.AFFIRM_PUBLIC_API_KEY || process.env.AFFIRM_PUBLIC_KEY || "";
