@@ -1,19 +1,20 @@
 // netlify/functions/affirm-authorize.mjs
 // PROD only - Affirm API v2
 //
-// ENV requeridas en Netlify:
-// - AFFIRM_PUBLIC_KEY  (o AFFIRM_PUBLIC_API_KEY)
+// ENV requeridas en Netlify (prod):
 // - AFFIRM_PRIVATE_KEY (o AFFIRM_PRIVATE_API_KEY)
 //
+// Opcional (solo si tu cuenta realmente usa par pub+priv):
+// - AFFIRM_PUBLIC_KEY  (o AFFIRM_PUBLIC_API_KEY)
+//
 // Opcional:
-// - AFFIRM_BASE_URL  (default: https://api.affirm.com/api/v2)  <-- si querés forzar
+// - AFFIRM_BASE_URL  (default: https://api.affirm.com/api/v2)
 // - DIAG_SECRET      (si existe, exige header x-diag-secret para diag remoto)
 // - ALLOWED_ORIGINS  (CSV allowlist para CORS)
 
-const BASE =
-  String(process.env.AFFIRM_BASE_URL || "https://api.affirm.com/api/v2")
-    .trim()
-    .replace(/\/+$/, ""); // sin trailing slash
+const BASE = String(process.env.AFFIRM_BASE_URL || "https://api.affirm.com/api/v2")
+  .trim()
+  .replace(/\/+$/, ""); // sin trailing slash
 
 const CAPTURE_DEFAULT = true;
 
@@ -50,25 +51,10 @@ function corsHeadersFor(event) {
   };
 }
 
-// Logging seguro (recorta). Evitá loguear PII.
-const safe = (o) => {
-  try {
-    return JSON.stringify(o, null, 2).slice(0, 2500);
-  } catch {
-    return "[unserializable]";
-  }
-};
-
 const getHeader = (event, name) => {
   const h = event?.headers || {};
   const keyLower = String(name).toLowerCase();
-  return (
-    h[keyLower] ??
-    h[name] ??
-    h[name.toLowerCase()] ??
-    h[name.toUpperCase()] ??
-    ""
-  );
+  return h[keyLower] ?? h[name] ?? h[name.toLowerCase()] ?? h[name.toUpperCase()] ?? "";
 };
 
 function json(statusCode, obj, cors) {
@@ -88,6 +74,62 @@ async function tryJson(res) {
   }
 }
 
+/**
+ * Construye Authorization para Affirm.
+ * Preferimos PRIVATE-only: Basic base64("PRIVATE:")
+ * Fallback (solo si existe PUB): Basic base64("PUB:PRIV")
+ */
+function buildAuthCandidates(pub, priv) {
+  const candidates = [];
+
+  // 1) Recomendado / típico en v2: private key como usuario y password vacío
+  if (priv) {
+    candidates.push({
+      name: "private_only",
+      header: "Basic " + Buffer.from(`${priv}:`).toString("base64"),
+    });
+  }
+
+  // 2) Fallback por compatibilidad: par pub+priv
+  if (pub && priv) {
+    candidates.push({
+      name: "pair_pub_priv",
+      header: "Basic " + Buffer.from(`${pub}:${priv}`).toString("base64"),
+    });
+  }
+
+  return candidates;
+}
+
+/**
+ * Hace fetch intentando distintas auth hasta que no sea 401/403.
+ * Si todas fallan, devuelve la última respuesta.
+ */
+async function fetchWithAuth(url, init, authCandidates) {
+  let last = null;
+
+  for (const cand of authCandidates) {
+    const res = await fetch(url, {
+      ...init,
+      headers: {
+        ...(init.headers || {}),
+        Authorization: cand.header,
+      },
+    });
+
+    // Guardamos info para debug
+    last = { res, authName: cand.name };
+
+    // Si auth falló, seguimos probando
+    if (res.status === 401 || res.status === 403) continue;
+
+    // Cualquier otro status: devolvemos ya (incluye 400/422 que es “auth ok, token inválido”)
+    return last;
+  }
+
+  return last; // puede ser null si no había candidates
+}
+
 export async function handler(event) {
   const cors = corsHeadersFor(event);
 
@@ -99,21 +141,25 @@ export async function handler(event) {
   }
 
   try {
+    // Body + querystring diag
     let body = {};
-try {
-  body = event.body ? JSON.parse(event.body) : {};
-} catch (e) {
-  // fallback: permitir diag por querystring para debug
-  body = {};
-}
-const qs = event.queryStringParameters || {};
-if (!body.diag && qs.diag) body.diag = qs.diag;
+    try {
+      body = event.body ? JSON.parse(event.body) : {};
+    } catch {
+      body = {};
+    }
+    const qs = event.queryStringParameters || {};
+    if (!body.diag && qs.diag) body.diag = qs.diag;
 
+    const PUB = String(
+      process.env.AFFIRM_PUBLIC_API_KEY || process.env.AFFIRM_PUBLIC_KEY || ""
+    ).trim();
 
-    const PUB =
-      process.env.AFFIRM_PUBLIC_API_KEY || process.env.AFFIRM_PUBLIC_KEY || "";
-    const PRIV =
-      process.env.AFFIRM_PRIVATE_API_KEY || process.env.AFFIRM_PRIVATE_KEY || "";
+    const PRIV = String(
+      process.env.AFFIRM_PRIVATE_API_KEY || process.env.AFFIRM_PRIVATE_KEY || ""
+    ).trim();
+
+    const authCandidates = buildAuthCandidates(PUB, PRIV);
 
     // ---------- DIAG LOCAL ----------
     if (body && body.diag === true) {
@@ -126,21 +172,21 @@ if (!body.diag && qs.diag) body.diag = qs.diag;
             baseURL: BASE,
             nodeVersion: process.versions?.node,
             flags: {
-              HAS_AFFIRM_PUBLIC_KEY: Boolean(PUB),
               HAS_AFFIRM_PRIVATE_KEY: Boolean(PRIV),
+              HAS_AFFIRM_PUBLIC_KEY: Boolean(PUB),
               HAS_VITE_AFFIRM_PUBLIC_KEY: Boolean(process.env.VITE_AFFIRM_PUBLIC_KEY),
               HAS_DIAG_SECRET: Boolean(process.env.DIAG_SECRET),
               HAS_ALLOWED_ORIGINS: Boolean(process.env.ALLOWED_ORIGINS),
               HAS_AFFIRM_BASE_URL: Boolean(process.env.AFFIRM_BASE_URL),
             },
+            authCandidates: authCandidates.map((a) => a.name),
           },
         },
         cors
       );
     }
 
-    
-       // ---------- DIAG REMOTO ----------
+    // ---------- DIAG REMOTO ----------
     if (body && body.diag === "remote") {
       const secret = process.env.DIAG_SECRET;
       if (secret) {
@@ -150,25 +196,40 @@ if (!body.diag && qs.diag) body.diag = qs.diag;
         }
       }
 
-      if (!PUB || !PRIV) {
+      if (!PRIV) {
         return json(
           500,
-          { ok: false, error: "Missing AFFIRM keys (AFFIRM_PUBLIC_KEY / AFFIRM_PRIVATE_KEY)" },
+          { ok: false, error: "Missing AFFIRM_PRIVATE_KEY (or AFFIRM_PRIVATE_API_KEY)" },
           cors
         );
       }
 
-      const AUTH = "Basic " + Buffer.from(`${PUB}:${PRIV}`).toString("base64");
+      if (!authCandidates.length) {
+        return json(
+          500,
+          { ok: false, error: "No auth candidates built (check env vars)" },
+          cors
+        );
+      }
 
       try {
-        const testRes = await fetch(`${BASE}/charges`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: AUTH },
-          body: JSON.stringify({ checkout_token: "FAKE_TEST_TOKEN_DO_NOT_USE" }),
-        });
+        const { res, authName } =
+          (await fetchWithAuth(
+            `${BASE}/charges`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ checkout_token: "FAKE_TEST_TOKEN_DO_NOT_USE" }),
+            },
+            authCandidates
+          )) || {};
 
-        const testBody = await tryJson(testRes);
-        const status = testRes.status;
+        if (!res) {
+          return json(500, { ok: false, error: "auth_fetch_not_attempted" }, cors);
+        }
+
+        const testBody = await tryJson(res);
+        const status = res.status;
 
         // PASS = 400/422 (token inválido => auth OK)
         // FAIL = 401/403 (auth mal) / 5xx (upstream)
@@ -178,7 +239,14 @@ if (!body.diag && qs.diag) body.diag = qs.diag;
           200,
           {
             ok: true,
-            remote: { env: "prod", baseURL: BASE, status, pass, body: testBody },
+            remote: {
+              env: "prod",
+              baseURL: BASE,
+              auth_used: authName,
+              status,
+              pass,
+              body: testBody,
+            },
           },
           cors
         );
@@ -201,7 +269,6 @@ if (!body.diag && qs.diag) body.diag = qs.diag;
       }
     }
 
-
     // ---------- FLUJO REAL ----------
     const {
       checkout_token,
@@ -218,30 +285,35 @@ if (!body.diag && qs.diag) body.diag = qs.diag;
     if (typeof order_id !== "string" || !order_id.trim()) {
       return json(400, { ok: false, error: "Missing order_id" }, cors);
     }
-    if (!PUB || !PRIV) {
+    if (!PRIV) {
       return json(
         500,
-        {
-          ok: false,
-          error: "Missing AFFIRM keys (AFFIRM_PUBLIC_KEY / AFFIRM_PRIVATE_KEY)",
-        },
+        { ok: false, error: "Missing AFFIRM_PRIVATE_KEY (or AFFIRM_PRIVATE_API_KEY)" },
         cors
       );
     }
 
-    const AUTH = "Basic " + Buffer.from(`${PUB}:${PRIV}`).toString("base64");
-
     // 1) Crear charge desde checkout_token
-    const authRes = await fetch(`${BASE}/charges`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: AUTH },
-      body: JSON.stringify({ checkout_token }),
-    });
+    const authAttempt = await fetchWithAuth(
+      `${BASE}/charges`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ checkout_token: checkout_token.trim() }),
+      },
+      authCandidates
+    );
 
+    if (!authAttempt?.res) {
+      return json(500, { ok: false, error: "auth_fetch_not_attempted" }, cors);
+    }
+
+    const authRes = authAttempt.res;
     const charge = await tryJson(authRes);
 
     console.log("[affirm charges]", {
       env: "prod",
+      auth_used: authAttempt.authName,
       status: authRes.status,
       order_id: String(order_id).slice(0, 80),
       charge_id: charge?.id || null,
@@ -249,7 +321,11 @@ if (!body.diag && qs.diag) body.diag = qs.diag;
     });
 
     if (!authRes.ok) {
-      return json(authRes.status, { ok: false, step: "charges", error: charge }, cors);
+      return json(
+        authRes.status,
+        { ok: false, step: "charges", auth_used: authAttempt.authName, error: charge },
+        cors
+      );
     }
 
     // 2) Capturar (si corresponde)
@@ -270,20 +346,31 @@ if (!body.diag && qs.diag) body.diag = qs.diag;
         return json(400, { ok: false, error: "amount_cents must be > 0" }, cors);
       }
 
-      const capRes = await fetch(`${BASE}/charges/${encodeURIComponent(charge.id)}/capture`, {
-        method: "POST",
-        headers: { Authorization: AUTH, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          order_id: order_id.trim(),
-          amount: amt,
-          shipping_carrier,
-          shipping_confirmation,
-        }),
-      });
+      const capAttempt = await fetchWithAuth(
+        `${BASE}/charges/${encodeURIComponent(charge.id)}/capture`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            order_id: order_id.trim(),
+            amount: amt,
+            shipping_carrier,
+            shipping_confirmation,
+          }),
+        },
+        authCandidates
+      );
 
+      if (!capAttempt?.res) {
+        return json(500, { ok: false, error: "capture_fetch_not_attempted" }, cors);
+      }
+
+      const capRes = capAttempt.res;
       captureResp = await tryJson(capRes);
 
       console.log("[affirm capture]", {
+        env: "prod",
+        auth_used: capAttempt.authName,
         status: capRes.status,
         order_id: String(order_id).slice(0, 80),
         charge_id: charge?.id || null,
@@ -291,7 +378,11 @@ if (!body.diag && qs.diag) body.diag = qs.diag;
       });
 
       if (!capRes.ok) {
-        return json(capRes.status, { ok: false, step: "capture", error: captureResp }, cors);
+        return json(
+          capRes.status,
+          { ok: false, step: "capture", auth_used: capAttempt.authName, error: captureResp },
+          cors
+        );
       }
     }
 
@@ -307,7 +398,6 @@ if (!body.diag && qs.diag) body.diag = qs.diag;
         ok: false,
         error: "server_error",
         message: msg,
-        // stack recortado para que no sea eterno
         stack: stack ? stack.slice(0, 2000) : undefined,
       },
       cors

@@ -1,4 +1,4 @@
-[build] 
+[build]
   command = "npm run build"
   publish = "dist"
   functions = "netlify/functions"
@@ -11,24 +11,23 @@
   status = 200
 
 # ---------- API Affirm ----------
-# (queda listo, pero si no tenés VITE_AFFIRM_PUBLIC_KEY no se usará)
 [[redirects]]
   from = "/api/affirm-authorize"
   to = "/.netlify/functions/affirm-authorize"
   status = 200
 
-# ---------- API Stripe: Checkout con tarjeta / BNPL ----------
+# ---------- API Stripe ----------
 [[redirects]]
   from = "/api/card-checkout"
   to = "/.netlify/functions/card-checkout"
   status = 200
-  [[redirects]]
+
+[[redirects]]
   from = "/api/ping"
   to = "/.netlify/functions/ping"
   status = 200
 
-
-# (opcional, por si en algún momento usas stripe-charge directo)
+# (opcional)
 [[redirects]]
   from = "/api/stripe-charge"
   to = "/.netlify/functions/stripe-charge"
@@ -41,7 +40,6 @@
   status = 200
 
 # ---------- Headers útiles ----------
-# No indexar ni cachear las páginas de confirm/cancel
 [[headers]]
   for = "/affirm/*"
   [headers.values]
@@ -50,16 +48,16 @@
     X-Frame-Options = "SAMEORIGIN"
 
 # ---------- Entornos ----------
-# Producción → Affirm prod (cuando haya claves)
+# Todo en PROD (no sandbox)
 [context.production.environment]
   AFFIRM_ENV = "prod"
   VITE_AFFIRM_ENV = "prod"
 
-# Deploy previews/branches → Affirm sandbox
+# (opcional pero recomendado) si Netlify crea previews/branches, también forzamos prod
 [context.deploy-preview.environment]
-  AFFIRM_ENV = "sandbox"
-  VITE_AFFIRM_ENV = "sandbox"
+  AFFIRM_ENV = "prod"
+  VITE_AFFIRM_ENV = "prod"
 
 [context.branch-deploy.environment]
-  AFFIRM_ENV = "sandbox"
-  VITE_AFFIRM_ENV = "sandbox"
+  AFFIRM_ENV = "prod"
+  VITE_AFFIRM_ENV = "prod"
