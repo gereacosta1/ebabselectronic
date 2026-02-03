@@ -54,7 +54,13 @@ function corsHeadersFor(event) {
 const getHeader = (event, name) => {
   const h = event?.headers || {};
   const keyLower = String(name).toLowerCase();
-  return h[keyLower] ?? h[name] ?? h[name.toLowerCase()] ?? h[name.toUpperCase()] ?? "";
+  return (
+    h[keyLower] ??
+    h[name] ??
+    h[name.toLowerCase()] ??
+    h[name.toUpperCase()] ??
+    ""
+  );
 };
 
 function json(statusCode, obj, cors) {
@@ -72,6 +78,26 @@ async function tryJson(res) {
   } catch {
     return { raw: text };
   }
+}
+
+/**
+ * Normaliza diag:
+ * - querystring: ?diag=true | ?diag=false | ?diag=remote
+ * - body: {"diag": true} | {"diag":"remote"}
+ */
+function normalizeDiag(bodyDiag, qsDiag) {
+  const v = bodyDiag != null ? bodyDiag : qsDiag;
+  if (v == null) return undefined;
+
+  if (typeof v === "boolean") return v;
+
+  const s = String(v).trim().toLowerCase();
+  if (s === "true" || s === "1") return true;
+  if (s === "false" || s === "0") return false;
+  if (s === "remote") return "remote";
+
+  // si mandan algo raro, lo devolvemos tal cual
+  return v;
 }
 
 /**
@@ -117,13 +143,12 @@ async function fetchWithAuth(url, init, authCandidates) {
       },
     });
 
-    // Guardamos info para debug
     last = { res, authName: cand.name };
 
-    // Si auth falló, seguimos probando
+    // 401/403 => auth falló, probamos la próxima
     if (res.status === 401 || res.status === 403) continue;
 
-    // Cualquier otro status: devolvemos ya (incluye 400/422 que es “auth ok, token inválido”)
+    // cualquier otro status: devolvemos ya (incluye 400/422 => auth OK, token inválido)
     return last;
   }
 
@@ -141,19 +166,16 @@ export async function handler(event) {
   }
 
   try {
-    // Body + querystring diag
+    // Body seguro
     let body = {};
     try {
       body = event.body ? JSON.parse(event.body) : {};
     } catch {
       body = {};
     }
-    const qs = event.queryStringParameters || {};
-if (body.diag == null && qs.diag != null) {
-  const raw = String(qs.diag).toLowerCase().trim();
-  body.diag = raw === "true" ? true : raw === "false" ? false : qs.diag;
-}
 
+    const qs = event.queryStringParameters || {};
+    const diag = normalizeDiag(body?.diag, qs?.diag);
 
     const PUB = String(
       process.env.AFFIRM_PUBLIC_API_KEY || process.env.AFFIRM_PUBLIC_KEY || ""
@@ -166,7 +188,7 @@ if (body.diag == null && qs.diag != null) {
     const authCandidates = buildAuthCandidates(PUB, PRIV);
 
     // ---------- DIAG LOCAL ----------
-    if (body && body.diag === true) {
+    if (diag === true) {
       return json(
         200,
         {
@@ -191,7 +213,7 @@ if (body.diag == null && qs.diag != null) {
     }
 
     // ---------- DIAG REMOTO ----------
-    if (body && body.diag === "remote") {
+    if (diag === "remote") {
       const secret = process.env.DIAG_SECRET;
       if (secret) {
         const got = getHeader(event, "x-diag-secret");
@@ -217,21 +239,21 @@ if (body.diag == null && qs.diag != null) {
       }
 
       try {
-        const { res, authName } =
-          (await fetchWithAuth(
-            `${BASE}/charges`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ checkout_token: "FAKE_TEST_TOKEN_DO_NOT_USE" }),
-            },
-            authCandidates
-          )) || {};
+        const attempt = await fetchWithAuth(
+          `${BASE}/charges`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ checkout_token: "FAKE_TEST_TOKEN_DO_NOT_USE" }),
+          },
+          authCandidates
+        );
 
-        if (!res) {
+        if (!attempt?.res) {
           return json(500, { ok: false, error: "auth_fetch_not_attempted" }, cors);
         }
 
+        const { res, authName } = attempt;
         const testBody = await tryJson(res);
         const status = res.status;
 
@@ -293,6 +315,13 @@ if (body.diag == null && qs.diag != null) {
       return json(
         500,
         { ok: false, error: "Missing AFFIRM_PRIVATE_KEY (or AFFIRM_PRIVATE_API_KEY)" },
+        cors
+      );
+    }
+    if (!authCandidates.length) {
+      return json(
+        500,
+        { ok: false, error: "No auth candidates built (check env vars)" },
         cors
       );
     }
