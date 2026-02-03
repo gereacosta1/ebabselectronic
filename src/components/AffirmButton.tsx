@@ -7,16 +7,18 @@ import {
   type Customer,
 } from "../lib/affirmCheckout";
 
+type ButtonCartItem = {
+  name: string;
+  sku?: string | number;
+  price: number; // USD
+  qty: number;
+  url?: string;
+  image?: string;
+  id?: string | number;
+};
+
 type Props = {
-  cartItems?: {
-    name: string;
-    sku?: string | number;
-    price: number; // USD
-    qty: number;
-    url?: string;
-    image?: string;
-    id?: string | number;
-  }[];
+  cartItems?: ButtonCartItem[];
   totalUSD?: number;
   shippingUSD?: number;
   taxUSD?: number;
@@ -150,7 +152,6 @@ function BuyerInfoForm({
 
   const inputClass =
     "w-full rounded-xl border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10";
-
   const labelClass = "text-xs font-semibold text-gray-700";
 
   return (
@@ -291,19 +292,17 @@ export default function AffirmButton({
     window.setTimeout(() => setToast((s) => ({ ...s, show: false })), ms);
   };
 
-  // Map a formato affirmCheckout
-  const mapped: Item[] = useMemo(
-    () =>
-      cartItems.map((it, i) => ({
-        id: it.id ?? it.sku ?? i + 1,
-        title: it.name,
-        price: Number(it.price) || 0,
-        qty: Math.max(1, Number(it.qty) || 1),
-        url: it.url ?? "/",
-        image: it.image,
-      })),
-    [cartItems]
-  );
+  // Mapear al tipo EXACTO que usa buildAffirmCheckout (affirmCheckout.ts)
+  const mapped: Item[] = useMemo(() => {
+    return cartItems.map((it, i) => ({
+      id: (it.id ?? it.sku ?? String(i + 1)) as string | number,
+      title: String(it.name ?? `Item ${i + 1}`),
+      price: Number(it.price) || 0,
+      qty: Math.max(1, Number(it.qty) || 1),
+      url: it.url ?? "/",
+      image: it.image,
+    }));
+  }, [cartItems]);
 
   const subtotalC = mapped.reduce(
     (acc, it) => acc + toCents(it.price) * it.qty,
@@ -383,7 +382,6 @@ export default function AffirmButton({
       return;
     }
 
-    // ✅ Si no hay datos del comprador, pedilos primero
     if (!buyerValid) {
       setBuyerModalOpen(true);
       return;
@@ -407,22 +405,23 @@ export default function AffirmButton({
 
       affirm.checkout.open({
         onSuccess: async ({ checkout_token }: { checkout_token: string }) => {
+          const orderId = "ORDER-" + Date.now();
+
           try {
-            const r = await fetch("/.netlify/functions/affirm-authorize", {
+            // ✅ usar redirect uniforme (netlify.toml)
+            const r = await fetch("/api/affirm-authorize", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 checkout_token,
-                order_id: "ORDER-" + Date.now(),
-                // ✅ compat: mandamos ambos (por si tu function esperaba "amount")
-                amount: totalC,
+                order_id: orderId,
                 amount_cents: totalC,
                 currency: "USD",
                 capture: true,
               }),
             });
 
-            const data = await r.json();
+            const data = await r.json().catch(() => ({}));
             console.log("[affirm-authorize]", data);
 
             if (!r.ok) {
@@ -461,7 +460,6 @@ export default function AffirmButton({
 
         onValidationError: () => {
           setOpening(false);
-          // Esto puede pasar si el comprador puso datos inválidos o incompletos
           setBuyerModalOpen(true);
         },
 
@@ -544,7 +542,6 @@ export default function AffirmButton({
             return;
           }
           setBuyerModalOpen(false);
-          // Abrimos Affirm inmediatamente sin pedir otro click
           startAffirmFlow();
         }}
         secondaryLabel="Close"
