@@ -3,8 +3,7 @@
   publish = "dist"
   functions = "netlify/functions"
 
-# ---------- Rutas específicas antes del catch-all (muy importante) ----------
-# Sirve los HTML estáticos de /affirm/* tal cual, sin que el SPA los reescriba
+# ---------- Rutas específicas antes del catch-all ----------
 [[redirects]]
   from = "/affirm/*"
   to = "/affirm/:splat"
@@ -27,19 +26,18 @@
   to = "/.netlify/functions/ping"
   status = 200
 
-# (opcional)
 [[redirects]]
   from = "/api/stripe-charge"
   to = "/.netlify/functions/stripe-charge"
   status = 200
 
-# ---------- SPA catch-all (mantener al final) ----------
+# ---------- SPA catch-all (SIEMPRE al final) ----------
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# ---------- Headers útiles ----------
+# ---------- Headers ----------
 [[headers]]
   for = "/affirm/*"
   [headers.values]
@@ -47,13 +45,11 @@
     X-Robots-Tag = "noindex"
     X-Frame-Options = "SAMEORIGIN"
 
-# ---------- Entornos ----------
-# Todo en PROD (no sandbox)
+# ---------- Entornos: todo prod ----------
 [context.production.environment]
   AFFIRM_ENV = "prod"
   VITE_AFFIRM_ENV = "prod"
 
-# (opcional pero recomendado) si Netlify crea previews/branches, también forzamos prod
 [context.deploy-preview.environment]
   AFFIRM_ENV = "prod"
   VITE_AFFIRM_ENV = "prod"

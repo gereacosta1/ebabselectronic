@@ -149,7 +149,11 @@ export async function handler(event) {
       body = {};
     }
     const qs = event.queryStringParameters || {};
-    if (!body.diag && qs.diag) body.diag = qs.diag;
+if (body.diag == null && qs.diag != null) {
+  const raw = String(qs.diag).toLowerCase().trim();
+  body.diag = raw === "true" ? true : raw === "false" ? false : qs.diag;
+}
+
 
     const PUB = String(
       process.env.AFFIRM_PUBLIC_API_KEY || process.env.AFFIRM_PUBLIC_KEY || ""
