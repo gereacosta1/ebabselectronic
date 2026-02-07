@@ -113,24 +113,28 @@ function normalizeDiag(bodyDiag, qsDiag) {
 function buildAuthCandidates(pub, priv) {
   const candidates = [];
 
-  // 1) Recomendado / típico en v2: private key como usuario y password vacío
-  if (priv) {
+  const PUB = String(pub || "").trim();
+  const PRIV = String(priv || "").trim();
+
+  // 1) Recomendado v2: private key como usuario y password vacío
+  if (PRIV) {
     candidates.push({
       name: "private_only",
-      header: "Basic " + Buffer.from(`${priv}:`).toString("base64"),
+      header: "Basic " + Buffer.from(`${PRIV}:`, "utf8").toString("base64"),
     });
   }
 
-  // 2) Fallback por compatibilidad: par pub+priv
-  if (pub && priv) {
+  // 2) Fallback por compatibilidad: par pub+priv (solo si ambos existen)
+  if (PUB && PRIV) {
     candidates.push({
       name: "pair_pub_priv",
-      header: "Basic " + Buffer.from(`${pub}:${priv}`).toString("base64"),
+      header: "Basic " + Buffer.from(`${PUB}:${PRIV}`, "utf8").toString("base64"),
     });
   }
 
   return candidates;
 }
+
 
 /**
  * Hace fetch intentando distintas auth hasta que no sea 401/403.
