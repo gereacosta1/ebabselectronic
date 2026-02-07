@@ -12,9 +12,14 @@
 // - DIAG_SECRET      (si existe, exige header x-diag-secret para diag remoto)
 // - ALLOWED_ORIGINS  (CSV allowlist para CORS)
 
-const BASE = String(process.env.AFFIRM_BASE_URL || "https://api.affirm.com/api/v2")
-  .trim()
-  .replace(/\/+$/, ""); // sin trailing slash
+function normalizeAffirmBase(raw) {
+  const s = String(raw || "").trim().replace(/\/+$/, "");
+  if (!s) return "https://api.affirm.com/api/v2";
+  return s.endsWith("/api/v2") ? s : `${s}/api/v2`;
+}
+
+const BASE = normalizeAffirmBase(process.env.AFFIRM_BASE_URL);
+
 
 const CAPTURE_DEFAULT = true;
 
