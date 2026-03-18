@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+//src/components/About.tsx
+import React from "react";
 import {
   Award,
   Users,
   Clock,
   Wrench,
-  ChevronLeft,
-  ChevronRight,
   MapPin,
   Building2,
 } from "lucide-react";
@@ -14,18 +13,6 @@ import { useI18n } from "../i18n/I18nProvider";
 
 const About: React.FC = () => {
   const { t } = useI18n();
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  const storeImages = [
-    "/IMG/IMG-TIENDA2.jpeg",
-    "/IMG/MOTOS-JUNTAS.jpeg",
-    "/IMG/MOTOS-JUNTAS (2).jpeg",
-    "/IMG/MOTOS-JUNTAS (1).jpeg",
-  ];
-
-  const nextImage = () => setCurrentImageIndex((p) => (p + 1) % storeImages.length);
-  const prevImage = () =>
-    setCurrentImageIndex((p) => (p - 1 + storeImages.length) % storeImages.length);
 
   const stats = [
     { icon: Award, number: "15+", textKey: "about.stats.years" },
@@ -66,7 +53,6 @@ const About: React.FC = () => {
   ] as const;
 
   const alertMoreInfo = (serviceTitle: string) => {
-    // ✅ tu texto ya trae {{title}}, acá lo inyectamos
     const template = t("about.services.moreInfo");
     const msg = template.replace("{{title}}", serviceTitle);
     window.alert(msg);
@@ -120,72 +106,23 @@ const About: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="grid md:grid-cols-[0.6fr_0.4fr] gap-10 items-center mb-16">
-          <div>
-            <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-4">
-              {t("about.trust.title")}
-            </h3>
-            <p className="text-gray-700 text-base md:text-lg mb-4">{t("about.trust.p1")}</p>
-            <p className="text-gray-700 text-base md:text-lg mb-6">{t("about.trust.p2")}</p>
+        <div className="max-w-4xl mb-16">
+          <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-4">
+            {t("about.trust.title")}
+          </h3>
+          <p className="text-gray-700 text-base md:text-lg mb-4">{t("about.trust.p1")}</p>
+          <p className="text-gray-700 text-base md:text-lg mb-6">{t("about.trust.p2")}</p>
 
-            <div className="flex flex-wrap gap-3">
-              <span className="px-4 py-2 rounded-full bg-purple-100 text-purple-800 text-sm font-semibold">
-                {t("about.chips.quality")}
-              </span>
-              <span className="px-4 py-2 rounded-full bg-purple-100 text-purple-800 text-sm font-semibold">
-                {t("about.chips.prices")}
-              </span>
-              <span className="px-4 py-2 rounded-full bg-purple-100 text-purple-800 text-sm font-semibold">
-                {t("about.chips.service")}
-              </span>
-            </div>
-          </div>
-
-          {/* Gallery */}
-          <div className="relative">
-            <div className="relative overflow-hidden rounded-3xl shadow-xl border border-purple-100 bg-[#f5f7ff] flex items-center justify-center">
-              <img
-                src={storeImages[currentImageIndex]}
-                alt={t("about.gallery.alt")}
-                className="w-full max-h-[520px] md:max-h-[560px] object-contain rounded-3xl"
-              />
-
-              <button
-                type="button"
-                onClick={prevImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 text-gray-900 p-2 rounded-full shadow hover:bg-white"
-                aria-label={t("about.gallery.prev")}
-                title={t("about.gallery.prev")}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={nextImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 text-gray-900 p-2 rounded-full shadow hover:bg-white"
-                aria-label={t("about.gallery.next")}
-                title={t("about.gallery.next")}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                {storeImages.map((_, index) => (
-                  <button
-                    type="button"
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`w-2.5 h-2.5 rounded-full border ${
-                      index === currentImageIndex
-                        ? "bg-purple-500 border-purple-500"
-                        : "bg-white border-gray-300"
-                    }`}
-                    aria-label={`${t("about.gallery.seeImage")} ${index + 1}`}
-                    title={`${t("about.gallery.seeImage")} ${index + 1}`}
-                  />
-                ))}
-              </div>
-            </div>
+          <div className="flex flex-wrap gap-3">
+            <span className="px-4 py-2 rounded-full bg-purple-100 text-purple-800 text-sm font-semibold">
+              {t("about.chips.quality")}
+            </span>
+            <span className="px-4 py-2 rounded-full bg-purple-100 text-purple-800 text-sm font-semibold">
+              {t("about.chips.prices")}
+            </span>
+            <span className="px-4 py-2 rounded-full bg-purple-100 text-purple-800 text-sm font-semibold">
+              {t("about.chips.service")}
+            </span>
           </div>
         </div>
 
@@ -243,7 +180,6 @@ const About: React.FC = () => {
             <div className="pointer-events-none absolute -left-16 bottom-0 h-44 w-44 rounded-full bg-black/20 blur-3xl" />
 
             <div className="relative grid md:grid-cols-2 gap-10 items-center">
-              {/* Text */}
               <div>
                 <span className="inline-flex items-center gap-2 rounded-full bg-black/20 px-4 py-1 text-xs md:text-sm font-semibold tracking-[0.18em] uppercase text-purple-100">
                   <MapPin className="w-4 h-4" />
@@ -280,11 +216,10 @@ const About: React.FC = () => {
                 </div>
               </div>
 
-              {/* Image */}
               <div className="relative min-h-[220px] md:min-h-[300px] lg:min-h-[360px] flex items-center">
                 <div className="w-full h-full rounded-3xl overflow-hidden border border-purple-200 bg-black/20 shadow-2xl flex items-center justify-center">
                   <img
-                    src="/IMG/IMG-TIENDA2.jpeg"
+                    src="/IMG/MOTOS-JUNTAS.jpeg"
                     alt={t("about.location.imageAlt")}
                     className="w-full h-full object-contain"
                     loading="lazy"
@@ -306,7 +241,7 @@ const About: React.FC = () => {
             </div>
           </div>
         </div>
-      </div> 
+      </div>
     </section>
   );
 };
