@@ -171,20 +171,20 @@ const en = {
   "feature.portableDesign": "Portable design",
 
 
-    // ABOUT - LOCATION (NEXTDRIVE)
-  "about.location.badge": "Showroom & Service Location",
-  "about.location.title.pre": "We operate inside",
-  "about.location.title.highlight": "NEXTDRIVE OF SOUTH FLORIDA",
-  "about.location.p1":
-    "EBABS ELECTRONIC LLC serves customers inside NEXTDRIVE OF SOUTH FLORIDA, where you can see our e-bikes and scooters and test before buying.",
-  "about.location.p2.pre": "Address:",
-  "about.location.p2.address": "811 NE 79th St, Miami, FL",
-  "about.location.p2.post": "You can also get technical support and pick up online orders here.",
-  "about.location.chip.showroom": "Physical showroom",
-  "about.location.chip.testRides": "Test rides & pick-up",
-  "about.location.chip.techService": "Technical service on site",
-  "about.location.imageBadge": "Located inside NEXTDRIVE OF SOUTH FLORIDA",
-  "about.location.imageAlt": "NextDrive of South Florida building where EBABS Electronic operates",
+// ABOUT - LOCATION (CLEAN)
+"about.location.badge": "Showroom & Service Location",
+"about.location.title.pre": "Visit our",
+"about.location.title.highlight": "Miami Location",
+"about.location.p1":
+  "EBABS ELECTRONIC LLC welcomes customers to our Miami location, where you can explore our e-bikes and scooters and test before buying.",
+"about.location.p2.pre": "Address:",
+"about.location.p2.address": "811 NE 79th St, Miami, FL",
+"about.location.p2.post": "You can also get technical support and pick up online orders here.",
+"about.location.chip.showroom": "Physical showroom",
+"about.location.chip.testRides": "Test rides & pick-up",
+"about.location.chip.techService": "Technical service on site",
+"about.location.imageBadge": "EBABS Miami location",
+"about.location.imageAlt": "EBABS Electronic Miami location",
 
 
 

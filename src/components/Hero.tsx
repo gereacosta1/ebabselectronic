@@ -26,7 +26,7 @@ const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
 
           <p className="text-base md:text-lg lg:text-xl text-purple-100 mb-6 max-w-xl">
             Scooters, e-bikes, cargo trikes and electronics. Financing, service
-            and support from your local shop in Miami.
+            and support from our Miami shop.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4">
@@ -51,37 +51,37 @@ const Hero: React.FC<HeroProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* Imagen */}
+        {/* Panel derecho sin imagen */}
         <div className="relative flex items-center justify-center">
           <div
-            className="rounded-3xl overflow-hidden shadow-2xl bg-gray-900/40 border border-purple-200/20
-                       flex items-center justify-center px-4 py-4 md:px-6 md:py-6"
+            className="w-full rounded-3xl shadow-2xl border border-purple-200/20
+                       bg-white/10 backdrop-blur-sm p-8 md:p-10 text-white"
           >
-            <img
-              src="/IMG/scooter-ebabs.webp"
-              alt="EBABS Electric Scooter in the showroom"
-              className="w-full max-h-[420px] object-contain drop-shadow-2xl"
-            />
-          </div>
+            <p className="uppercase tracking-[0.2em] text-sm text-yellow-300 mb-3">
+              Miami Location
+            </p>
 
-          {/* Badge dirección + teléfono */}
-          <div className="absolute bottom-4 left-4 bg-white rounded-2xl shadow-xl px-5 py-3 flex items-center gap-3 border border-purple-200">
-            {/* Icono */}
-            <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-lg shadow-md">
-              ⚡
-            </div>
+            <h2 className="font-black text-3xl md:text-4xl leading-tight mb-4">
+              Visit our showroom and get support in person
+            </h2>
 
-            {/* Texto */}
-            <div className="leading-tight">
-              <p className="text-base font-black text-gray-900">
-                811 NE 79th St, Miami FL
-              </p>
-              <p className="text-sm font-semibold text-purple-700">
-                (786) 968 1621
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Open 10:30 AM – 7:00 PM
-              </p>
+            <p className="text-purple-100 text-base md:text-lg mb-8">
+              Explore available scooters, e-bikes and electronics, ask questions
+              and get help directly at our store.
+            </p>
+
+            <div className="bg-white rounded-2xl shadow-xl px-5 py-4 border border-purple-200 max-w-md">
+              <div className="leading-tight">
+                <p className="text-base font-black text-gray-900">
+                  811 NE 79th St, Miami FL
+                </p>
+                <p className="text-sm font-semibold text-purple-700 mt-1">
+                  (786) 968 1621
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Open 10:30 AM – 7:00 PM
+                </p>
+              </div>
             </div>
           </div>
         </div>
