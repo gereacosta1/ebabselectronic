@@ -1,5 +1,12 @@
 // src/App.tsx
-import React, { useState } from "react";
+
+import {
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
+import { ShoppingCart } from "lucide-react";
+
 import Header from "./components/Header";
 import Hero from "./components/Hero";
 import Catalog from "./components/Catalog";
@@ -7,11 +14,17 @@ import About from "./components/About";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 import MotorcycleModal from "./components/MotorcycleModal";
-import { I18nProvider, useI18n } from "./i18n/I18nProvider";
-
-import { CartProvider, useCart } from "./context/CartContext";
 import CartDrawer from "./components/CartDrawer";
-import { ShoppingCart } from "lucide-react";
+
+import {
+  I18nProvider,
+  useI18n,
+} from "./i18n/I18nProvider";
+
+import {
+  CartProvider,
+  useCart,
+} from "./context/CartContext";
 
 export interface Motorcycle {
   id: number;
@@ -30,76 +43,234 @@ export interface Motorcycle {
   gallery?: string[];
 }
 
+const PHONE_NUMBER = "+17869681621";
+const WHATSAPP_NUMBER = "17869681621";
+const EMAIL_ADDRESS = "ebabselectronic@gmail.com";
+
+const HEADER_OFFSET = 96;
+
 function CartFab() {
   const { open, items } = useCart();
-  const count = items.reduce((sum, it) => sum + it.qty, 0);
 
-  if (count <= 0) return null;
+  const itemCount = useMemo(
+    () =>
+      items.reduce(
+        (total, item) =>
+          total + item.qty,
+        0,
+      ),
+    [items],
+  );
+
+  if (itemCount <= 0) {
+    return null;
+  }
+
+  const visibleCount =
+    itemCount > 99
+      ? "99+"
+      : String(itemCount);
 
   return (
     <button
+      type="button"
       onClick={open}
-      className="fixed right-4 bottom-4 z-[9999] bg-[var(--primary)] text-white rounded-full shadow-2xl px-5 py-3 flex items-center gap-2 hover:bg-purple-700"
+      aria-label={`Open shopping cart with ${itemCount} item${
+        itemCount === 1 ? "" : "s"
+      }`}
+      title="Open cart"
+      className="
+        fixed right-4 bottom-4 z-[9999]
+        flex items-center gap-2
+        rounded-full
+        bg-[var(--primary)]
+        px-5 py-3
+        text-white
+        shadow-2xl
+        transition-colors
+        hover:bg-purple-700
+        focus:outline-none
+        focus-visible:ring-2
+        focus-visible:ring-purple-400
+        focus-visible:ring-offset-2
+      "
     >
-      <ShoppingCart className="w-5 h-5" />
-      <span className="font-black">{count}</span>
+      <ShoppingCart
+        className="h-5 w-5"
+        aria-hidden="true"
+      />
+
+      <span className="font-black">
+        {visibleCount}
+      </span>
     </button>
   );
 }
 
 function AppInner() {
-  const [activeSection, setActiveSection] = useState("inicio");
-  const [selectedMotorcycle, setSelectedMotorcycle] = useState<Motorcycle | null>(null);
-
   const { lang } = useI18n();
 
-  const scrollToSection = (sectionId: string) => {
-    setActiveSection(sectionId);
+  const [
+    activeSection,
+    setActiveSection,
+  ] = useState("inicio");
 
-    const el = document.getElementById(sectionId);
-    if (!el) return;
+  const [
+    selectedMotorcycle,
+    setSelectedMotorcycle,
+  ] = useState<Motorcycle | null>(
+    null,
+  );
 
-    const headerOffset = 96; // ajustable (altura del header + margen)
-    const top = el.getBoundingClientRect().top + window.scrollY - headerOffset;
+  const scrollToSection = useCallback(
+    (sectionId: string) => {
+      const cleanSectionId =
+        sectionId.trim();
 
-    window.scrollTo({ top, behavior: "smooth" });
-  };
+      if (!cleanSectionId) {
+        return;
+      }
 
-  const handlePhoneCall = () => window.open("tel:+17869681621", "_self");
+      setActiveSection(
+        cleanSectionId,
+      );
 
-  const handleWhatsApp = () => {
-    const message =
-      lang === "es"
-        ? "Hola! Estoy interesado en sus scooters, e-bikes y productos eléctricos. ¿Me pueden dar más info?"
-        : "Hi! I'm interested in your scooters, e-bikes and electric products. Can you share more info?";
+      const element =
+        document.getElementById(
+          cleanSectionId,
+        );
 
-    window.open(`https://wa.me/+17869681621?text=${encodeURIComponent(message)}`, "_blank");
-  };
+      if (!element) {
+        console.warn(
+          `[App] Section not found: ${cleanSectionId}`,
+        );
 
-  const handleEmail = () => {
-    window.open("mailto:ebabselectronic@gmail.com", "_self");
-  };
+        return;
+      }
+
+      const top =
+        element.getBoundingClientRect()
+          .top +
+        window.scrollY -
+        HEADER_OFFSET;
+
+      window.scrollTo({
+        top: Math.max(0, top),
+        behavior: "smooth",
+      });
+    },
+    [],
+  );
+
+  const handlePhoneCall =
+    useCallback(() => {
+      window.location.href =
+        `tel:${PHONE_NUMBER}`;
+    }, []);
+
+  const handleEmail =
+    useCallback(() => {
+      window.location.href =
+        `mailto:${EMAIL_ADDRESS}`;
+    }, []);
+
+  const handleWhatsApp =
+    useCallback(() => {
+      const message =
+        lang === "es"
+          ? "Hola! Estoy interesado en sus scooters, e-bikes y productos eléctricos. ¿Me pueden dar más info?"
+          : "Hi! I'm interested in your scooters, e-bikes and electric products. Can you share more info?";
+
+      const url =
+        `https://wa.me/${WHATSAPP_NUMBER}` +
+        `?text=${encodeURIComponent(
+          message,
+        )}`;
+
+      window.open(
+        url,
+        "_blank",
+        "noopener,noreferrer",
+      );
+    }, [lang]);
+
+  const handleViewDetails =
+    useCallback(
+      (
+        motorcycle: Motorcycle,
+      ) => {
+        setSelectedMotorcycle(
+          motorcycle,
+        );
+      },
+      [],
+    );
+
+  const handleCloseModal =
+    useCallback(() => {
+      setSelectedMotorcycle(null);
+    }, []);
 
   return (
     <div className="min-h-screen bg-[var(--light)]">
-      <Header activeSection={activeSection} onNavigate={scrollToSection} />
-      <Hero onNavigate={scrollToSection} />
+      <Header
+        activeSection={
+          activeSection
+        }
+        onNavigate={
+          scrollToSection
+        }
+      />
 
-      <Catalog onViewDetails={setSelectedMotorcycle} />
-      <About />
-      <Contact onPhoneCall={handlePhoneCall} onWhatsApp={handleWhatsApp} onEmail={handleEmail} />
+      <main>
+        <Hero
+          onNavigate={
+            scrollToSection
+          }
+        />
+
+        <Catalog
+          onViewDetails={
+            handleViewDetails
+          }
+        />
+
+        <About />
+
+        <Contact
+          onPhoneCall={
+            handlePhoneCall
+          }
+          onWhatsApp={
+            handleWhatsApp
+          }
+          onEmail={
+            handleEmail
+          }
+        />
+      </main>
+
       <Footer />
 
       {selectedMotorcycle && (
         <MotorcycleModal
-          motorcycle={selectedMotorcycle}
-          onClose={() => setSelectedMotorcycle(null)}
-          onPhoneCall={handlePhoneCall}
-          onWhatsApp={handleWhatsApp}
+          motorcycle={
+            selectedMotorcycle
+          }
+          onClose={
+            handleCloseModal
+          }
+          onPhoneCall={
+            handlePhoneCall
+          }
+          onWhatsApp={
+            handleWhatsApp
+          }
         />
       )}
 
       <CartFab />
+
       <CartDrawer />
     </div>
   );

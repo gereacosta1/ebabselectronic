@@ -1,7 +1,22 @@
 // src/components/Catalog.tsx
-import React, { useState } from "react";
-import { Heart, Eye, Fuel, Gauge, Calendar } from "lucide-react";
-import { Motorcycle } from "../App";
+
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  Calendar,
+  Eye,
+  Fuel,
+  Gauge,
+  Heart,
+} from "lucide-react";
+
+import type { Motorcycle } from "../App";
+
 import AffirmButton from "./AffirmButton";
 import UnderlineGrow from "./UnderlineGrow";
 
@@ -12,606 +27,1210 @@ interface CatalogProps {
   onViewDetails: (motorcycle: Motorcycle) => void;
 }
 
-/** Toast simple para reemplazar alert() de "Ver más" */
+type CatalogFilter = "all" | "nueva";
+
+type BtnProps =
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: "primary" | "secondary" | "ghost";
+  };
+
+const FALLBACK_IMAGE = "/fallback.png";
+
+const TOAST_DURATION_MS = 2500;
+
+/**
+ * Catálogo de productos.
+ *
+ * IMPORTANTE:
+ * Estos precios sirven para mostrar el catálogo y construir el carrito.
+ * Más adelante vamos a validar los precios también del lado del servidor
+ * antes de crear la sesión de Stripe.
+ */
+const PRODUCTS: Motorcycle[] = [
+  // ========================================================
+  // SCOOTERS ELÉCTRICOS
+  // ========================================================
+
+  {
+    id: 5,
+    name: "Electric Scooter City",
+    brand: "EBABS",
+    model: "City 500W",
+    year: 2025,
+    price: 1500,
+    image: "/IMG/Scooter-electrico(1).jpeg",
+    condition: "Nueva",
+    engine: "Electric",
+    featured: true,
+    description:
+      "Scooter eléctrico urbano, perfecto para moverte por Miami con cero emisiones y bajo mantenimiento.",
+    features: [
+      "Motor eléctrico",
+      "Ligero y ágil",
+      "Batería de alta capacidad",
+    ],
+  },
+
+  {
+    id: 8,
+    name: "Electric Scooter 2025",
+    brand: "Master Sonic",
+    model: "Urban Pro",
+    year: 2025,
+    price: 1850,
+    image: "/IMG/ELECTRIC SCOOTER.jpeg",
+    condition: "Nueva",
+    engine: "Electric",
+    description:
+      "Scooter eléctrico robusto con gran autonomía, ideal para uso diario y recorridos más largos.",
+    features: [
+      "Motor eléctrico",
+      "Suspensión confortable",
+      "Autonomía extendida",
+    ],
+  },
+
+  {
+    id: 12,
+    name: "Electric Scooter Urban",
+    brand: "EBABS",
+    model: "Scooter Urban 2025",
+    year: 2025,
+    price: 1000,
+    image: "/IMG/electricBike3.jpeg",
+    condition: "Nueva",
+    engine: "Electric",
+    description:
+      "Modelo compacto y ligero, pensado para la ciudad. Fácil de manejar y de guardar.",
+    features: [
+      "Motor eléctrico",
+      "Diseño compacto",
+      "Batería removible",
+    ],
+  },
+
+  {
+    id: 18,
+    name: "Scooter Movelito",
+    brand: "Movelito",
+    model: "Scooter Movelito 2025",
+    year: 2025,
+    price: 1850,
+    image: "/IMG/scooter-azul.jpeg",
+    condition: "Nueva",
+    engine: "Electric",
+    featured: true,
+    description:
+      "Scooter eléctrico con diseño moderno y cómodo, ideal para el día a día.",
+    features: [
+      "Motor eléctrico",
+      "Ligero y ágil",
+      "Batería de alta capacidad",
+    ],
+  },
+
+  {
+    id: 20,
+    name: "Scooter Eléctrico Hiboy",
+    brand: "Hiboy",
+    model: "Hiboy 2025",
+    year: 2025,
+    price: 500,
+    image: "/IMG/scooter-electrico-hiboy.jpg",
+    condition: "Nueva",
+    engine: "Electric",
+    description:
+      "Opción accesible para comenzar en la movilidad eléctrica, perfecta para trayectos cortos.",
+    features: [
+      "Motor eléctrico",
+      "Plegable",
+      "Freno regenerativo",
+    ],
+  },
+
+  // ========================================================
+  // E-BIKES
+  // ========================================================
+
+  {
+    id: 25,
+    name: "E bike xp4",
+    brand: "E-Bike",
+    model: "XP4",
+    year: 2025,
+    price: 2500,
+    image: "/IMG/e-bike-xp4-2500.jpeg",
+    condition: "Nueva",
+    engine: "Electric",
+    featured: true,
+    description:
+      "E-bike estilo urbano, ideal para movilidad diaria.",
+    features: [
+      "Motor eléctrico",
+      "Batería de alta capacidad",
+      "Diseño compacto",
+    ],
+  },
+
+  {
+    id: 26,
+    name: "E bike rambo",
+    brand: "E-Bike",
+    model: "Rambo",
+    year: 2025,
+    price: 2850,
+    image: "/IMG/e-bike-rambo-2850.jpeg",
+    condition: "Nueva",
+    engine: "Electric",
+    description:
+      "E-bike con ruedas anchas y estructura robusta.",
+    features: [
+      "Motor eléctrico",
+      "Suspensión confortable",
+      "Autonomía extendida",
+    ],
+  },
+
+  {
+    id: 27,
+    name: "E bike súper 73",
+    brand: "E-Bike",
+    model: "Super 73",
+    year: 2025,
+    price: 3500,
+    image: "/IMG/e-bike-super73-3500.jpeg",
+    condition: "Nueva",
+    engine: "Electric",
+    featured: true,
+    description:
+      "E-bike estilo scrambler, potente y cómoda.",
+    features: [
+      "Motor eléctrico de alta potencia",
+      "Batería de alta capacidad",
+      "Diseño robusto",
+    ],
+  },
+
+  // ========================================================
+  // PARLANTES JBL
+  // ========================================================
+
+  {
+    id: 21,
+    name: "JBL Charge 4",
+    brand: "JBL",
+    model: "Charge 4",
+    year: 2025,
+    price: 150,
+    image: "/IMG/jbl-charge-4.jpeg",
+    condition: "Nueva",
+    featured: true,
+    description:
+      "Parlante JBL Charge 4 con batería de larga duración y sonido potente para interior y exterior.",
+    features: [
+      "Bluetooth",
+      "Resistente al agua",
+      "Batería recargable",
+    ],
+  },
+
+  {
+    id: 22,
+    name: "JBL GO 4",
+    brand: "JBL",
+    model: "GO 4",
+    year: 2025,
+    price: 50,
+    image: "/IMG/jbl-go-4.jpeg",
+    condition: "Nueva",
+    description:
+      "Parlante ultra compacto para llevar en el bolsillo. Ideal para uso diario.",
+    features: [
+      "Bluetooth",
+      "Tamaño compacto",
+      "Hasta 8h de batería",
+    ],
+  },
+
+  {
+    id: 23,
+    name: "JBL Party Box",
+    brand: "JBL",
+    model: "Party Box",
+    year: 2025,
+    price: 800,
+    image: "/IMG/jbl-party-box.jpeg",
+    condition: "Nueva",
+    featured: true,
+    description:
+      "JBL Party Box con luces LED y sonido de alta potencia, perfecto para eventos y fiestas.",
+    features: [
+      "Alta potencia",
+      "Luces LED",
+      "Entradas para micrófono",
+    ],
+  },
+
+  {
+    id: 24,
+    name: "JBL Flip 6",
+    brand: "JBL",
+    model: "Flip 6",
+    year: 2025,
+    price: 200,
+    image: "/IMG/jbl-flip-6.jpeg",
+    condition: "Nueva",
+    description:
+      "Parlante JBL Flip 6 resistente al agua, con sonido equilibrado y fácil de transportar.",
+    features: [
+      "Bluetooth",
+      "Resistente al agua",
+      "Diseño portátil",
+    ],
+  },
+];
+
+/**
+ * Mapeo:
+ * texto español del producto -> clave genérica i18n.
+ */
+const FEATURE_KEY_BY_ES: Record<string, string> = {
+  // Movilidad eléctrica
+  "Motor eléctrico": "feature.motor",
+  "Ligero y ágil": "feature.lightAgile",
+  "Batería de alta capacidad": "feature.batteryHigh",
+  "Motor eléctrico de alta potencia":
+    "feature.motorHighPower",
+  "Pantalla táctil": "feature.touchscreen",
+  "Conectividad Bluetooth": "feature.bluetooth",
+  "Sistema de navegación GPS": "feature.gps",
+  "Suspensión confortable":
+    "feature.comfortSuspension",
+  "Autonomía extendida": "feature.extendedRange",
+  "Diseño compacto": "feature.compactDesign",
+  "Diseño robusto": "feature.robustDesign",
+  "Batería removible": "feature.removableBattery",
+  Plegable: "feature.foldable",
+  "Freno regenerativo": "feature.regenBrake",
+
+  // Audio
+  Bluetooth: "feature.bluetooth",
+  "Resistente al agua":
+    "feature.waterResistant",
+  "Batería recargable":
+    "feature.rechargeableBattery",
+  "Tamaño compacto": "feature.compactSize",
+  "Hasta 8h de batería": "feature.battery8h",
+  "Alta potencia": "feature.highPower",
+  "Luces LED": "feature.ledLights",
+  "Entradas para micrófono":
+    "feature.micInput",
+  "Diseño portátil":
+    "feature.portableDesign",
+};
+
+function getValidPrice(
+  value: unknown,
+): number | null {
+  const price = Number(value);
+
+  if (
+    !Number.isFinite(price) ||
+    price <= 0
+  ) {
+    return null;
+  }
+
+  return (
+    Math.round(price * 100) / 100
+  );
+}
+
+function translateFeature(
+  t: (key: string) => string,
+  productId: number,
+  featureTextES: string,
+  index: number,
+): string {
+  const clean =
+    typeof featureTextES === "string"
+      ? featureTextES.trim()
+      : "";
+
+  if (!clean) {
+    return "";
+  }
+
+  // Primero intenta traducción específica
+  // del producto.
+  const productKey =
+    `product.${productId}.feature.${index}`;
+
+  const productTranslation =
+    t(productKey);
+
+  if (
+    productTranslation !== productKey
+  ) {
+    return productTranslation;
+  }
+
+  // Después busca traducción genérica.
+  const genericKey =
+    FEATURE_KEY_BY_ES[clean];
+
+  if (genericKey) {
+    const genericTranslation =
+      t(genericKey);
+
+    if (
+      genericTranslation !== genericKey
+    ) {
+      return genericTranslation;
+    }
+  }
+
+  // Último fallback:
+  // mantiene texto original.
+  return clean;
+}
+
+const Btn: React.FC<BtnProps> = ({
+  variant = "primary",
+  className = "",
+  children,
+  type = "button",
+  ...props
+}) => {
+  const base =
+    "w-full inline-flex items-center justify-center gap-2 " +
+    "px-5 py-3 rounded-xl font-extrabold " +
+    "transition-all duration-300 " +
+    "focus:outline-none focus-visible:ring-2 " +
+    "focus-visible:ring-purple-400 " +
+    "focus-visible:ring-offset-2 " +
+    "focus-visible:ring-offset-black " +
+    "disabled:opacity-60 disabled:cursor-not-allowed";
+
+  const variants = {
+    primary:
+      "bg-purple-600 text-white " +
+      "hover:bg-purple-700 shadow-lg " +
+      "hover:shadow-black/40 active:scale-[.98]",
+
+    secondary:
+      "bg-black text-white border border-white/15 " +
+      "hover:bg-black/90 shadow-lg active:scale-[.98]",
+
+    ghost:
+      "bg-transparent text-white/90 " +
+      "border border-white/20 " +
+      "hover:text-white hover:border-white/40",
+  } as const;
+
+  return (
+    <button
+      type={type}
+      className={`${base} ${variants[variant]} ${className}`}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
+
 function SimpleToast({
   show,
   text,
-  onClose,
 }: {
   show: boolean;
   text: string;
-  onClose: () => void;
 }) {
-  if (!show) return null;
+  if (!show) {
+    return null;
+  }
+
   return (
     <div
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-black/90 text-white border border-white/20 px-4 py-3 rounded-xl shadow-2xl z-[9999] text-sm font-semibold"
-      onClick={onClose}
       role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      className="
+        fixed bottom-6 left-1/2 z-[9999]
+        -translate-x-1/2
+        rounded-xl
+        border border-white/20
+        bg-black/90
+        px-4 py-3
+        text-sm font-semibold text-white
+        shadow-2xl
+      "
     >
       {text}
     </div>
   );
 }
 
-// --- Botón reutilizable con estilos coherentes ---
-type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost";
-};
-
-const Btn: React.FC<BtnProps> = ({
-  variant = "primary",
-  className = "",
-  children,
-  ...props
+const Catalog: React.FC<CatalogProps> = ({
+  onViewDetails,
 }) => {
-  const base =
-    "w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-extrabold " +
-    "transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 " +
-    "focus:ring-black-500 disabled:opacity-60 disabled:cursor-not-allowed";
-
-  const variants = {
-    primary:
-      "bg-purple-600 text-white hover:bg-purple-700 shadow-lg hover:shadow-black/40 active:scale-[.98]",
-    secondary:
-      "bg-black text-white border border-white/15 hover:bg-black/90 shadow-lg active:scale-[.98]",
-    ghost:
-      "bg-transparent text-white/90 border border-white/20 hover:text-white hover:border-white/40",
-  } as const;
-
-  return (
-    <button className={`${base} ${variants[variant]} ${className}`} {...props}>
-      {children}
-    </button>
-  );
-};
-
-/**
- * 🔁 Mapeo: texto ES del array -> clave i18n genérica.
- * Esto sirve como fallback cuando NO existe:
- *   product.{id}.feature.{idx}
- *
- * Tip: podés ir agregando más claves "feature.*" en los diccionarios
- * para que EN quede bien sin tocar la data.
- */
-const FEATURE_KEY_BY_ES: Record<string, string> = {
-  // movilidad eléctrica (genéricas)
-  "Motor eléctrico": "feature.motor",
-  "Ligero y ágil": "feature.lightAgile",
-  "Batería de alta capacidad": "feature.batteryHigh",
-  "Motor eléctrico de alta potencia": "feature.motorHighPower",
-  "Pantalla táctil": "feature.touchscreen",
-  "Conectividad Bluetooth": "feature.bluetooth",
-  "Sistema de navegación GPS": "feature.gps",
-
-  // extras que aparecen en tu data actual
-  "Suspensión confortable": "feature.comfortSuspension",
-  "Autonomía extendida": "feature.extendedRange",
-  "Diseño compacto": "feature.compactDesign",
-  "Batería removible": "feature.removableBattery",
-  "Plegable": "feature.foldable",
-  "Freno regenerativo": "feature.regenBrake",
-
-  // audio / parlantes
-  Bluetooth: "feature.bluetooth",
-  "Resistente al agua": "feature.waterResistant",
-  "Batería recargable": "feature.rechargeableBattery",
-  "Tamaño compacto": "feature.compactSize",
-  "Hasta 8h de batería": "feature.battery8h",
-  "Alta potencia": "feature.highPower",
-  "Luces LED": "feature.ledLights",
-  "Entradas para micrófono": "feature.micInput",
-  "Diseño portátil": "feature.portableDesign",
-};
-
-/** ✅ Traducción robusta de features */
-const translateFeature = (
-  t: (k: string) => string,
-  productId: number,
-  featureTextES: string,
-  idx: number
-) => {
-  const clean = (featureTextES ?? "").trim();
-
-  // 1) Primero: por producto e índice (si existe en el dict)
-  const keyById = `product.${productId}.feature.${idx}`;
-  const v1 = t(keyById);
-  if (v1 !== keyById) return v1;
-
-  // 2) Fallback: clave genérica por texto ES
-  const genericKey = FEATURE_KEY_BY_ES[clean];
-  if (genericKey) {
-    const v2 = t(genericKey);
-    if (v2 !== genericKey) return v2;
-  }
-
-  // 3) Último fallback: devolver el texto original
-  return clean;
-};
-
-const Catalog: React.FC<CatalogProps> = ({ onViewDetails }) => {
   const { t, fmtMoney } = useI18n();
+  const { addItem } = useCart();
 
-  const [filter, setFilter] = useState<"all" | "nueva">("all");
-  const [favorites, setFavorites] = useState<number[]>([]);
-  const [toast, setToast] = useState<{ show: boolean; text: string }>({
+  const [
+    filter,
+    setFilter,
+  ] = useState<CatalogFilter>("all");
+
+  const [
+    favorites,
+    setFavorites,
+  ] = useState<number[]>([]);
+
+  const [
+    toast,
+    setToast,
+  ] = useState<{
+    show: boolean;
+    text: string;
+  }>({
     show: false,
     text: "",
   });
 
-  const showToast = (text: string, ms = 2500) => {
-    setToast({ show: true, text });
-    window.setTimeout(() => setToast({ show: false, text: "" }), ms);
-  };
+  const toastTimerRef =
+    useRef<number | null>(null);
 
-  // 👉 carrito
-  const { addItem, open } = useCart();
+  useEffect(() => {
+    return () => {
+      if (
+        toastTimerRef.current !== null
+      ) {
+        window.clearTimeout(
+          toastTimerRef.current,
+        );
+      }
+    };
+  }, []);
 
-  /**
-   * Data del catálogo (EBABS: movilidad eléctrica + electrónica).
-   * Mantengo tu tipo Motorcycle por compatibilidad.
-   */
-  const motorcycles: Motorcycle[] = [
-    // ---------- SCOOTERS ELÉCTRICOS ----------
-    {
-      id: 5,
-      name: "Electric Scooter City",
-      brand: "EBABS",
-      model: "City 500W",
-      year: 2025,
-      price: 1500,
-      image: "/IMG/Scooter-electrico(1).jpeg",
-      condition: "Nueva",
-      engine: "Electric",
-      featured: true,
-      description:
-        "Scooter eléctrico urbano, perfecto para moverte por Miami con cero emisiones y bajo mantenimiento.",
-      features: ["Motor eléctrico", "Ligero y ágil", "Batería de alta capacidad"],
-    },
-    {
-      id: 8,
-      name: "Electric Scooter 2025",
-      brand: "Master Sonic",
-      model: "Urban Pro",
-      year: 2025,
-      price: 1850,
-      image: "/IMG/ELECTRIC SCOOTER.jpeg",
-      condition: "Nueva",
-      engine: "Electric",
-      description:
-        "Scooter eléctrico robusto con gran autonomía, ideal para uso diario y recorridos más largos.",
-      features: ["Motor eléctrico", "Suspensión confortable", "Autonomía extendida"],
-    },
-    {
-      id: 12,
-      name: "Electric Scooter Urban",
-      brand: "EBABS",
-      model: "Scooter Urban 2025",
-      year: 2025,
-      price: 1000,
-      image: "/IMG/electricBike3.jpeg",
-      condition: "Nueva",
-      engine: "Electric",
-      description:
-        "Modelo compacto y ligero, pensado para la ciudad. Fácil de manejar y de guardar.",
-      features: ["Motor eléctrico", "Diseño compacto", "Batería removible"],
-    },
-    {
-      id: 18,
-      name: "Scooter Movelito",
-      brand: "Movelito",
-      model: "Scooter Movelito 2025",
-      year: 2025,
-      price: 1850,
-      image: "/IMG/scooter-azul.jpeg",
-      condition: "Nueva",
-      engine: "Electric",
-      featured: true,
-      description:
-        "Scooter eléctrico con diseño moderno y cómodo, ideal para el día a día.",
-      features: ["Motor eléctrico", "Ligero y ágil", "Batería de alta capacidad"],
-    },
-    {
-      id: 20,
-      name: "Scooter Eléctrico Hiboy",
-      brand: "Hiboy",
-      model: "Hiboy 2025",
-      year: 2025,
-      price: 500,
-      image: "/IMG/scooter-electrico-hiboy.jpg",
-      condition: "Nueva",
-      engine: "Electric",
-      description:
-        "Opción accesible para comenzar en la movilidad eléctrica, perfecta para trayectos cortos.",
-      features: ["Motor eléctrico", "Plegable", "Freno regenerativo"],
-    },
+  const showToast = useCallback(
+    (
+      text: string,
+      duration = TOAST_DURATION_MS,
+    ) => {
+      if (
+        toastTimerRef.current !== null
+      ) {
+        window.clearTimeout(
+          toastTimerRef.current,
+        );
+      }
 
-    // ---------- E-BIKES ----------
-    {
-      id: 25,
-      name: "E bike xp4",
-      brand: "E-Bike",
-      model: "XP4",
-      year: 2025,
-      price: 2500,
-      image: "/IMG/e-bike-xp4-2500.jpeg",
-      condition: "Nueva",
-      engine: "Electric",
-      featured: true,
-      description: "E-bike estilo urbano, ideal para movilidad diaria.",
-      features: ["Motor eléctrico", "Batería de alta capacidad", "Diseño compacto"],
-    },
-    {
-      id: 26,
-      name: "E bike rambo",
-      brand: "E-Bike",
-      model: "Rambo",
-      year: 2025,
-      price: 2850,
-      image: "/IMG/e-bike-rambo-2850.jpeg",
-      condition: "Nueva",
-      engine: "Electric",
-      description: "E-bike con ruedas anchas y estructura robusta.",
-      features: ["Motor eléctrico", "Suspensión confortable", "Autonomía extendida"],
-    },
-    {
-      id: 27,
-      name: "E bike súper 73",
-      brand: "E-Bike",
-      model: "Super 73",
-      year: 2025,
-      price: 3500,
-      image: "/IMG/e-bike-super73-3500.jpeg",
-      condition: "Nueva",
-      engine: "Electric",
-      featured: true,
-      description: "E-bike estilo scrambler, potente y cómoda.",
-      features: [
-        "Motor eléctrico de alta potencia",
-        "Batería de alta capacidad",
-        "Diseño robusto",
-      ],
-    },
+      setToast({
+        show: true,
+        text,
+      });
 
-    // ---------- PARLANTES JBL ----------
-    {
-      id: 21,
-      name: "JBL Charge 4",
-      brand: "JBL",
-      model: "Charge 4",
-      year: 2025,
-      price: 150,
-      image: "/IMG/jbl-charge-4.jpeg",
-      condition: "Nueva",
-      featured: true,
-      description:
-        "Parlante JBL Charge 4 con batería de larga duración y sonido potente para interior y exterior.",
-      features: ["Bluetooth", "Resistente al agua", "Batería recargable"],
-    },
-    {
-      id: 22,
-      name: "JBL GO 4",
-      brand: "JBL",
-      model: "GO 4",
-      year: 2025,
-      price: 50,
-      image: "/IMG/jbl-go-4.jpeg",
-      condition: "Nueva",
-      description:
-        "Parlante ultra compacto para llevar en el bolsillo. Ideal para uso diario.",
-      features: ["Bluetooth", "Tamaño compacto", "Hasta 8h de batería"],
-    },
-    {
-      id: 23,
-      name: "JBL Party Box",
-      brand: "JBL",
-      model: "Party Box",
-      year: 2025,
-      price: 800,
-      image: "/IMG/jbl-party-box.jpeg",
-      condition: "Nueva",
-      featured: true,
-      description:
-        "JBL Party Box con luces LED y sonido de alta potencia, perfecto para eventos y fiestas.",
-      features: ["Alta potencia", "Luces LED", "Entradas para micrófono"],
-    },
-    {
-      id: 24,
-      name: "JBL Flip 6",
-      brand: "JBL",
-      model: "Flip 6",
-      year: 2025,
-      price: 200,
-      image: "/IMG/jbl-flip-6.jpeg",
-      condition: "Nueva",
-      description:
-        "Parlante JBL Flip 6 resistente al agua, con sonido equilibrado y fácil de transportar.",
-      features: ["Bluetooth", "Resistente al agua", "Diseño portátil"],
-    },
-  ];
+      toastTimerRef.current =
+        window.setTimeout(() => {
+          setToast({
+            show: false,
+            text: "",
+          });
 
-  // Mostrar solo eléctricos o productos sin motor (parlantes)
-  const onlyElectricOrNoEngine = motorcycles.filter(
-    (m) => (m.engine && m.engine.toLowerCase() === "electric") || !m.engine
+          toastTimerRef.current =
+            null;
+        }, duration);
+    },
+    [],
   );
 
-  // Mantener tu filtro "Todas / Nuevas" sobre la lista ya filtrada
-  const filteredMotorcycles = onlyElectricOrNoEngine.filter((moto) => {
-    if (filter === "all") return true;
-    return moto.condition.toLowerCase() === filter;
-  });
+  const toggleFavorite =
+    useCallback((id: number) => {
+      setFavorites(
+        (previousFavorites) => {
+          if (
+            previousFavorites.includes(id)
+          ) {
+            return previousFavorites.filter(
+              (favoriteId) =>
+                favoriteId !== id,
+            );
+          }
 
-  const toggleFavorite = (id: number) => {
-    setFavorites((prev) =>
-      prev.includes(id)
-        ? prev.filter((favId) => favId !== id)
-        : [...prev, id]
+          return [
+            ...previousFavorites,
+            id,
+          ];
+        },
+      );
+    }, []);
+
+  /**
+   * Mostramos:
+   * - productos eléctricos
+   * - productos sin engine (ej. parlantes)
+   */
+  const availableProducts =
+    useMemo(
+      () =>
+        PRODUCTS.filter(
+          (product) =>
+            !product.engine ||
+            product.engine.toLowerCase() ===
+              "electric",
+        ),
+      [],
     );
-  };
+
+  const filteredProducts =
+    useMemo(() => {
+      if (filter === "all") {
+        return availableProducts;
+      }
+
+      return availableProducts.filter(
+        (product) =>
+          product.condition
+            .toLowerCase() === filter,
+      );
+    }, [
+      availableProducts,
+      filter,
+    ]);
+
+  const handleAddToCart =
+    useCallback(
+      (product: Motorcycle) => {
+        const price =
+          getValidPrice(product.price);
+
+        if (price === null) {
+          console.error(
+            "[Catalog] Invalid product price:",
+            {
+              id: product.id,
+              price: product.price,
+            },
+          );
+
+          return;
+        }
+
+        addItem({
+          id: String(product.id),
+          name: product.name,
+          price,
+          qty: 1,
+          sku: String(product.id),
+          image: product.image,
+          url: window.location.href,
+        });
+      },
+      [addItem],
+    );
 
   return (
     <section
       id="catalogo"
-      className="bg-black text-white pt-24 pb-24 md:pt-32 md:pb-28"
+      className="
+        bg-black text-white
+        pt-24 pb-24
+        md:pt-32 md:pb-28
+      "
     >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="
+        max-w-6xl mx-auto
+        px-4 sm:px-6 lg:px-8
+      ">
+        {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-6">
-            <UnderlineGrow>{t("catalog.title")}</UnderlineGrow>
+          <h2 className="
+            text-4xl md:text-6xl
+            font-black text-white
+            mb-6
+          ">
+            <UnderlineGrow>
+              {t("catalog.title")}
+            </UnderlineGrow>
           </h2>
-          <p className="text-white text-xl md:text-2xl max-w-3xl mx-auto font-bold">
+
+          <p className="
+            text-white
+            text-xl md:text-2xl
+            max-w-3xl mx-auto
+            font-bold
+          ">
             {t("catalog.subtitle")}
           </p>
         </div>
 
-        {/* Filter Buttons */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-[#7c3aed]/90 backdrop-blur-md border border-[#a855f7] rounded-lg p-2 flex space-x-2 shadow-2xl">
+        {/* Filtros */}
+        <div className="
+          flex justify-center mb-8
+        ">
+          <div className="
+            bg-[#7c3aed]/90
+            backdrop-blur-md
+            border border-[#a855f7]
+            rounded-lg p-2
+            flex space-x-2
+            shadow-2xl
+          ">
             <button
-              onClick={() => setFilter("all")}
-              className={`px-8 py-3 rounded-md text-lg font-black transition-all duration-300 ${
+              type="button"
+              onClick={() =>
+                setFilter("all")
+              }
+              aria-pressed={
                 filter === "all"
-                  ? "bg-black/90 backdrop-blur-sm text-white shadow-lg"
-                  : "text-white hover:bg-black/30"
-              }`}
+              }
+              className={`
+                px-8 py-3
+                rounded-md
+                text-lg font-black
+                transition-all duration-300
+                focus:outline-none
+                focus-visible:ring-2
+                focus-visible:ring-white
+                ${
+                  filter === "all"
+                    ? "bg-black/90 backdrop-blur-sm text-white shadow-lg"
+                    : "text-white hover:bg-black/30"
+                }
+              `}
             >
-              {t("catalog.filter.all")}
+              {t(
+                "catalog.filter.all",
+              )}
             </button>
+
             <button
-              onClick={() => setFilter("nueva")}
-              className={`px-8 py-3 rounded-md text-lg font-black transition-all duration-300 ${
+              type="button"
+              onClick={() =>
+                setFilter("nueva")
+              }
+              aria-pressed={
                 filter === "nueva"
-                  ? "bg-black/90 backdrop-blur-sm text-white shadow-lg"
-                  : "text-white hover:bg-black/30"
-              }`}
+              }
+              className={`
+                px-8 py-3
+                rounded-md
+                text-lg font-black
+                transition-all duration-300
+                focus:outline-none
+                focus-visible:ring-2
+                focus-visible:ring-white
+                ${
+                  filter === "nueva"
+                    ? "bg-black/90 backdrop-blur-sm text-white shadow-lg"
+                    : "text-white hover:bg-black/30"
+                }
+              `}
             >
-              {t("catalog.filter.new")}
+              {t(
+                "catalog.filter.new",
+              )}
             </button>
           </div>
         </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredMotorcycles.map((moto) => {
-            const condLabel =
-              moto.condition === "Nueva"
-                ? t("product.condition.new")
-                : t("product.condition.used");
+        {/* Productos */}
+        <div className="
+          grid grid-cols-1
+          md:grid-cols-2
+          lg:grid-cols-3
+          gap-8
+        ">
+          {filteredProducts.map(
+            (product) => {
+              const price =
+                getValidPrice(
+                  product.price,
+                );
 
-            return (
-              <div
-                key={moto.id}
-                className="bg-[#7c3aed]/95 backdrop-blur-md border border-[#a855f7]/60 rounded-lg overflow-hidden shadow-2xl hover:shadow-[#c4b5fd]/70 transition-all duration-300 group transform hover:scale-105"
-              >
-                <div className="relative">
-                  <img
-                    src={moto.image || "/fallback.png"}
-                    alt={moto.name || t("image.altFallback")}
-                    className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                    onError={(e) => {
-                      const target = e.currentTarget as HTMLImageElement;
-                      if (target.src.endsWith("/fallback.png")) return;
-                      target.src = "/fallback.png";
-                    }}
-                  />
+              const isFavorite =
+                favorites.includes(
+                  product.id,
+                );
 
-                  <div className="absolute top-4 left-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        moto.condition === "Nueva"
-                          ? "bg-black text-white"
-                          : "bg-white text-black"
-                      }`}
-                    >
-                      {condLabel}
-                    </span>
-                  </div>
+              const conditionLabel =
+                product.condition ===
+                "Nueva"
+                  ? t(
+                      "product.condition.new",
+                    )
+                  : t(
+                      "product.condition.used",
+                    );
 
-                  <div className="absolute top-4 right-4">
-                    <button
-                      type="button"
-                      onClick={() => toggleFavorite(moto.id)}
-                      className="p-2 rounded-full bg-black/80 backdrop-blur-sm hover:bg-black transition-colors border border-white/20"
-                      aria-label={
-                        favorites.includes(moto.id)
-                          ? t("favorites.remove")
-                          : t("favorites.add")
+              return (
+                <article
+                  key={product.id}
+                  className="
+                    bg-[#7c3aed]/95
+                    backdrop-blur-md
+                    border border-[#a855f7]/60
+                    rounded-lg
+                    overflow-hidden
+                    shadow-2xl
+                    hover:shadow-[#c4b5fd]/70
+                    transition-all duration-300
+                    group
+                    transform
+                    hover:scale-[1.02]
+                  "
+                >
+                  {/* Imagen */}
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={
+                        product.image ||
+                        FALLBACK_IMAGE
                       }
-                      title={
-                        favorites.includes(moto.id)
-                          ? t("favorites.remove")
-                          : t("favorites.add")
+                      alt={
+                        product.name ||
+                        t(
+                          "image.altFallback",
+                        )
                       }
-                    >
-                      <Heart
-                        className="w-5 h-5"
-                        color={favorites.includes(moto.id) ? "#f97316" : "#ffffff"}
-                        fill={favorites.includes(moto.id) ? "#f97316" : "none"}
-                      />
-                    </button>
-                  </div>
+                      className="
+                        w-full h-72
+                        object-cover
+                        group-hover:scale-105
+                        transition-transform
+                        duration-300
+                      "
+                      loading="lazy"
+                      onError={(
+                        event,
+                      ) => {
+                        const image =
+                          event.currentTarget;
 
-                  {moto.featured && (
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2">
-                      <span className="bg-black/90 backdrop-blur-sm border border-white/20 text-white px-4 py-2 rounded-full text-sm font-bold">
-                        {t("product.badge.featured")}
+                        image.onerror =
+                          null;
+
+                        image.src =
+                          FALLBACK_IMAGE;
+                      }}
+                    />
+
+                    {/* Condición */}
+                    <div className="
+                      absolute top-4 left-4
+                    ">
+                      <span
+                        className={`
+                          px-3 py-1
+                          rounded-full
+                          text-sm font-semibold
+                          ${
+                            product.condition ===
+                            "Nueva"
+                              ? "bg-black text-white"
+                              : "bg-white text-black"
+                          }
+                        `}
+                      >
+                        {
+                          conditionLabel
+                        }
                       </span>
                     </div>
-                  )}
-                </div>
 
-                <div className="p-4">
-                  <h3 className="text-2xl font-black text-white mb-2">
-                    {moto.name}
-                  </h3>
-                  <p className="text-white mb-4 text-lg font-bold">
-                    {moto.brand} • {moto.model}
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="flex items-center space-x-2 text-white">
-                      <Calendar className="w-4 h-4" />
-                      <span className="text-lg font-bold">{moto.year}</span>
+                    {/* Favorito */}
+                    <div className="
+                      absolute top-4 right-4
+                    ">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          toggleFavorite(
+                            product.id,
+                          )
+                        }
+                        aria-pressed={
+                          isFavorite
+                        }
+                        aria-label={
+                          isFavorite
+                            ? t(
+                                "favorites.remove",
+                              )
+                            : t(
+                                "favorites.add",
+                              )
+                        }
+                        title={
+                          isFavorite
+                            ? t(
+                                "favorites.remove",
+                              )
+                            : t(
+                                "favorites.add",
+                              )
+                        }
+                        className="
+                          p-2 rounded-full
+                          bg-black/80
+                          backdrop-blur-sm
+                          hover:bg-black
+                          transition-colors
+                          border border-white/20
+                          focus:outline-none
+                          focus-visible:ring-2
+                          focus-visible:ring-white
+                        "
+                      >
+                        <Heart
+                          className="w-5 h-5"
+                          color={
+                            isFavorite
+                              ? "#f97316"
+                              : "#ffffff"
+                          }
+                          fill={
+                            isFavorite
+                              ? "#f97316"
+                              : "none"
+                          }
+                        />
+                      </button>
                     </div>
 
-                    {moto.engine && (
-                      <div className="flex items-center space-x-2 text-white">
-                        <Fuel className="w-4 h-4" />
-                        <span className="text-sm font-semibold">{moto.engine}</span>
-                      </div>
-                    )}
-
-                    {moto.mileage && (
-                      <div className="flex items-center space-x-2 text-white col-span-2">
-                        <Gauge className="w-4 h-4" />
-                        <span className="text-lg font-bold">
-                          {moto.mileage.toLocaleString()} km
+                    {/* Featured */}
+                    {product.featured && (
+                      <div className="
+                        absolute
+                        top-4 left-1/2
+                        -translate-x-1/2
+                      ">
+                        <span className="
+                          bg-black/90
+                          backdrop-blur-sm
+                          border border-white/20
+                          text-white
+                          px-4 py-2
+                          rounded-full
+                          text-sm font-bold
+                          whitespace-nowrap
+                        ">
+                          {t(
+                            "product.badge.featured",
+                          )}
                         </span>
                       </div>
                     )}
                   </div>
 
-                  {/* precio visible */}
-                  {moto.price > 0 && (
-                    <p className="text-lg font-black text-white mb-2">
-                      {fmtMoney(Number(moto.price))}
+                  {/* Información */}
+                  <div className="p-4">
+                    <h3 className="
+                      text-2xl
+                      font-black
+                      text-white
+                      mb-2
+                    ">
+                      {product.name}
+                    </h3>
+
+                    <p className="
+                      text-white
+                      mb-4
+                      text-lg
+                      font-bold
+                    ">
+                      {product.brand}
+                      {" • "}
+                      {product.model}
                     </p>
-                  )}
 
-                  {/* features */}
-                  {moto.features?.length ? (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {moto.features.map((f, idx) => {
-                        const label = translateFeature(t, moto.id, f, idx);
-                        return (
-                          <span
-                            key={`${moto.id}-feature-${idx}`}
-                            className="bg-black/70 border border-white/20 text-white text-xs px-2 py-1 rounded"
-                          >
-                            {label}
+                    {/* Datos */}
+                    <div className="
+                      grid grid-cols-2
+                      gap-4 mb-4
+                    ">
+                      <div className="
+                        flex items-center
+                        space-x-2
+                        text-white
+                      ">
+                        <Calendar className="w-4 h-4" />
+
+                        <span className="
+                          text-lg font-bold
+                        ">
+                          {product.year}
+                        </span>
+                      </div>
+
+                      {product.engine && (
+                        <div className="
+                          flex items-center
+                          space-x-2
+                          text-white
+                        ">
+                          <Fuel className="w-4 h-4" />
+
+                          <span className="
+                            text-sm font-semibold
+                          ">
+                            {
+                              product.engine
+                            }
                           </span>
-                        );
-                      })}
+                        </div>
+                      )}
+
+                      {typeof product.mileage ===
+                        "number" &&
+                        product.mileage >=
+                          0 && (
+                          <div className="
+                            flex items-center
+                            space-x-2
+                            text-white
+                            col-span-2
+                          ">
+                            <Gauge className="w-4 h-4" />
+
+                            <span className="
+                              text-lg font-bold
+                            ">
+                              {product.mileage.toLocaleString()}
+                              {" km"}
+                            </span>
+                          </div>
+                        )}
                     </div>
-                  ) : null}
 
-                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {/* Ver Detalles */}
-                    <Btn
-                      variant="secondary"
-                      onClick={() => onViewDetails(moto)}
-                      aria-label={`${t("product.viewDetails")} ${moto.name}`}
-                      title={t("product.viewDetails")}
-                    >
-                      <Eye className="w-4 h-4" />
-                      {t("product.viewDetails")}
-                    </Btn>
+                    {/* Precio */}
+                    {price !== null ? (
+                      <p className="
+                        text-lg
+                        font-black
+                        text-white
+                        mb-2
+                      ">
+                        {fmtMoney(price)}
+                      </p>
+                    ) : (
+                      <p className="
+                        text-sm
+                        font-bold
+                        text-white/70
+                        mb-2
+                      ">
+                        {t(
+                          "product.price.toConfirm",
+                        )}
+                      </p>
+                    )}
 
-                    {/* Agregar al carrito */}
-                    <Btn
-                      variant="primary"
-                      type="button"
-                      onClick={() => {
-                        const priceNum = Number(moto.price);
-                        if (!Number.isFinite(priceNum) || priceNum <= 0) return;
+                    {/* Features */}
+                    {product.features?.length ? (
+                      <div className="
+                        flex flex-wrap
+                        gap-2 mb-4
+                      ">
+                        {product.features.map(
+                          (
+                            feature,
+                            index,
+                          ) => {
+                            const label =
+                              translateFeature(
+                                t,
+                                product.id,
+                                feature,
+                                index,
+                              );
 
-                        addItem({
-                          id: String(moto.id),
-                          name: moto.name,
-                          price: priceNum,
-                          qty: 1,
-                          sku: String(moto.id),
-                          image: moto.image,
-                          url: window.location.href,
-                        });
-                        open();
-                      }}
-                      className="bg-[#6d28d9] text-white font-black px-6 py-3 rounded-xl text-lg 
-                                 border-2 border-white/70 shadow-lg 
-                                 hover:bg-[#5b21b6] hover:border-white hover:scale-105 
-                                 transition-all duration-300"
-                    >
-                      {t("cart.add")}
-                    </Btn>
+                            if (!label) {
+                              return null;
+                            }
 
-                    {/* Affirm por ítem */}
-                    <div className="w-full">
-                      {(() => {
-                        const priceNum = Number(moto.price);
-                        const isPriceValid =
-                          Number.isFinite(priceNum) && priceNum > 0;
+                            return (
+                              <span
+                                key={`${product.id}-feature-${index}`}
+                                className="
+                                  bg-black/70
+                                  border border-white/20
+                                  text-white
+                                  text-xs
+                                  px-2 py-1
+                                  rounded
+                                "
+                              >
+                                {
+                                  label
+                                }
+                              </span>
+                            );
+                          },
+                        )}
+                      </div>
+                    ) : null}
 
-                        if (!isPriceValid) {
-                          return (
-                            <button
-                              disabled
-                              title={t("product.price.toConfirm")}
-                              className="w-full bg-gray-600 text-white px-6 py-3 rounded-xl text-lg font-black opacity-60 cursor-not-allowed"
-                            >
-                              {t("product.price.toConfirm")}
-                            </button>
-                          );
+                    {/* Acciones */}
+                    <div className="
+                      mt-4
+                      grid grid-cols-1
+                      sm:grid-cols-3
+                      gap-3
+                    ">
+                      {/* Detalles */}
+                      <Btn
+                        variant="secondary"
+                        onClick={() =>
+                          onViewDetails(
+                            product,
+                          )
                         }
+                        aria-label={`${t(
+                          "product.viewDetails",
+                        )} ${product.name}`}
+                        title={t(
+                          "product.viewDetails",
+                        )}
+                      >
+                        <Eye className="w-4 h-4" />
 
-                        return (
+                        {t(
+                          "product.viewDetails",
+                        )}
+                      </Btn>
+
+                      {/* Carrito */}
+                      <Btn
+                        variant="primary"
+                        disabled={
+                          price === null
+                        }
+                        onClick={() =>
+                          handleAddToCart(
+                            product,
+                          )
+                        }
+                        className="
+                          bg-[#6d28d9]
+                          text-white
+                          font-black
+                          px-6 py-3
+                          rounded-xl
+                          text-lg
+                          border-2
+                          border-white/70
+                          shadow-lg
+                          hover:bg-[#5b21b6]
+                          hover:border-white
+                          hover:scale-105
+                          transition-all
+                          duration-300
+                        "
+                      >
+                        {t("cart.add")}
+                      </Btn>
+
+                      {/* Affirm */}
+                      <div className="w-full">
+                        {price === null ? (
+                          <button
+                            type="button"
+                            disabled
+                            title={t(
+                              "product.price.toConfirm",
+                            )}
+                            className="
+                              w-full
+                              bg-gray-600
+                              text-white
+                              px-6 py-3
+                              rounded-xl
+                              text-lg
+                              font-black
+                              opacity-60
+                              cursor-not-allowed
+                            "
+                          >
+                            {t(
+                              "product.price.toConfirm",
+                            )}
+                          </button>
+                        ) : (
                           <AffirmButton
                             cartItems={[
                               {
-                                name: moto.name,
-                                price: priceNum,
+                                name:
+                                  product.name,
+                                price,
                                 qty: 1,
-                                sku: String(moto.id),
-                                url: window.location.href,
+                                sku: String(
+                                  product.id,
+                                ),
+                                url:
+                                  window.location
+                                    .href,
                               },
                             ]}
-                            totalUSD={priceNum}
+                            totalUSD={
+                              price
+                            }
                           />
-                        );
-                      })()}
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
+                </article>
+              );
+            },
+          )}
         </div>
 
-        <div className="text-center mt-12">
+        {/* Ver más */}
+        <div className="
+          text-center mt-12
+        ">
           <button
-            onClick={() => showToast(t("catalog.toast.moreSoon"))}
-            className="bg-[#7c3aed]/90 backdrop-blur-md border border-[#a855f7] text-white px-12 py-4 rounded-lg text-xl font-black hover:bg-[#6d28d9] transition-all duration-300 transform hover:scale-105 shadow-2xl"
+            type="button"
+            onClick={() =>
+              showToast(
+                t(
+                  "catalog.toast.moreSoon",
+                ),
+              )
+            }
+            className="
+              bg-[#7c3aed]/90
+              backdrop-blur-md
+              border border-[#a855f7]
+              text-white
+              px-12 py-4
+              rounded-lg
+              text-xl font-black
+              hover:bg-[#6d28d9]
+              transition-all
+              duration-300
+              transform
+              hover:scale-105
+              shadow-2xl
+              focus:outline-none
+              focus-visible:ring-2
+              focus-visible:ring-white
+            "
           >
-            {t("catalog.cta.moreBikes")}
+            {t(
+              "catalog.cta.moreBikes",
+            )}
           </button>
         </div>
       </div>
 
-      {/* Toast global */}
+      {/* Toast */}
       <SimpleToast
         show={toast.show}
         text={toast.text}
-        onClose={() => setToast({ show: false, text: "" })}
       />
     </section>
   );
